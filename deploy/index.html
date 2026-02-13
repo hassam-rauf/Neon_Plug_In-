@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Customizer UI/UX - Client Preview</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@400,0" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .gradient-border {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            padding: 2px;
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-950 text-white min-h-screen font-sans">
+    <!-- Header -->
+    <header class="border-b border-white/10 bg-black/50 backdrop-blur-xl sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white">palette</span>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg">WooCommerce Product Customizer</h1>
+                    <p class="text-xs text-gray-400">UI/UX Preview for Client Approval</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 text-xs text-gray-400">
+                <span class="material-symbols-outlined text-sm">calendar_today</span>
+                <span id="date"></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-transparent to-pink-900/20"></div>
+        <div class="absolute top-20 left-10 w-72 h-72 bg-purple-500/30 rounded-full blur-[100px]"></div>
+        <div class="absolute bottom-10 right-10 w-96 h-96 bg-pink-500/20 rounded-full blur-[120px]"></div>
+
+        <div class="relative max-w-7xl mx-auto px-6 py-16 text-center">
+            <div class="inline-flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-2 mb-6">
+                <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                <span class="text-sm text-gray-300">Ready for Review</span>
+            </div>
+            <h2 class="text-4xl md:text-5xl font-extrabold mb-4 bg-gradient-to-r from-white via-purple-200 to-pink-200 bg-clip-text text-transparent">
+                Product Customizer Interfaces
+            </h2>
+            <p class="text-gray-400 max-w-2xl mx-auto text-lg">
+                Interactive previews of all product customization experiences. Click any card to explore the full interface.
+            </p>
+        </div>
+    </section>
+
+    <!-- Products Grid -->
+    <section class="max-w-7xl mx-auto px-6 pb-20">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- Neon Sign -->
+            <a href="neon-sign-preview.html" class="card-hover block">
+                <div class="gradient-border rounded-2xl">
+                    <div class="bg-gray-900 rounded-2xl p-6 h-full">
+                        <div class="aspect-video bg-gray-950 rounded-xl mb-4 flex items-center justify-center relative overflow-hidden">
+                            <div class="absolute inset-0 bg-gradient-to-t from-pink-500/20 to-transparent"></div>
+                            <span class="text-4xl font-bold text-pink-400" style="text-shadow: 0 0 20px #ff00ff, 0 0 40px #ff00ff;">Neon</span>
+                        </div>
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <h3 class="font-bold text-lg mb-1">Neon Sign Customizer</h3>
+                                <p class="text-sm text-gray-400">Custom text, fonts, colors & glow effects</p>
+                            </div>
+                            <span class="material-symbols-outlined text-purple-400">arrow_forward</span>
+                        </div>
+                        <div class="flex gap-2 mt-4">
+                            <span class="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full">10 Fonts</span>
+                            <span class="text-[10px] bg-pink-500/20 text-pink-300 px-2 py-1 rounded-full">14 Colors</span>
+                            <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full">Live Preview</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+
+            <!-- T-Shirt -->
+            <a href="tshirt-preview.html" class="card-hover block">
+                <div class="glass rounded-2xl p-6 h-full">
+                    <div class="aspect-video bg-gray-950 rounded-xl mb-4 flex items-center justify-center relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-t from-blue-500/20 to-transparent"></div>
+                        <span class="material-symbols-outlined text-6xl text-blue-400">checkroom</span>
+                    </div>
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h3 class="font-bold text-lg mb-1">T-Shirt Designer</h3>
+                            <p class="text-sm text-gray-400">Front/Back views with image upload</p>
+                        </div>
+                        <span class="material-symbols-outlined text-blue-400">arrow_forward</span>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <span class="text-[10px] bg-blue-500/20 text-blue-300 px-2 py-1 rounded-full">Dual View</span>
+                        <span class="text-[10px] bg-green-500/20 text-green-300 px-2 py-1 rounded-full">Image Upload</span>
+                        <span class="text-[10px] bg-yellow-500/20 text-yellow-300 px-2 py-1 rounded-full">Text Add</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Mug -->
+            <a href="mug-preview.html" class="card-hover block">
+                <div class="glass rounded-2xl p-6 h-full">
+                    <div class="aspect-video bg-gray-950 rounded-xl mb-4 flex items-center justify-center relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-t from-orange-500/20 to-transparent"></div>
+                        <span class="material-symbols-outlined text-6xl text-orange-400">coffee</span>
+                    </div>
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h3 class="font-bold text-lg mb-1">Mug Customizer</h3>
+                            <p class="text-sm text-gray-400">Multi-zone: Front, Back, Rear views</p>
+                        </div>
+                        <span class="material-symbols-outlined text-orange-400">arrow_forward</span>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <span class="text-[10px] bg-orange-500/20 text-orange-300 px-2 py-1 rounded-full">3 Zones</span>
+                        <span class="text-[10px] bg-red-500/20 text-red-300 px-2 py-1 rounded-full">360° View</span>
+                        <span class="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full">Colors</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Visiting Card -->
+            <a href="card-preview.html" class="card-hover block">
+                <div class="glass rounded-2xl p-6 h-full">
+                    <div class="aspect-video bg-gray-950 rounded-xl mb-4 flex items-center justify-center relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-t from-emerald-500/20 to-transparent"></div>
+                        <span class="material-symbols-outlined text-6xl text-emerald-400">badge</span>
+                    </div>
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h3 class="font-bold text-lg mb-1">Business Card Designer</h3>
+                            <p class="text-sm text-gray-400">Professional card customization</p>
+                        </div>
+                        <span class="material-symbols-outlined text-emerald-400">arrow_forward</span>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <span class="text-[10px] bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded-full">Templates</span>
+                        <span class="text-[10px] bg-teal-500/20 text-teal-300 px-2 py-1 rounded-full">Custom Text</span>
+                        <span class="text-[10px] bg-cyan-500/20 text-cyan-300 px-2 py-1 rounded-full">Logo Upload</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- General Preview -->
+            <a href="preview.html" class="card-hover block">
+                <div class="glass rounded-2xl p-6 h-full">
+                    <div class="aspect-video bg-gray-950 rounded-xl mb-4 flex items-center justify-center relative overflow-hidden">
+                        <div class="absolute inset-0 bg-gradient-to-t from-violet-500/20 to-transparent"></div>
+                        <span class="material-symbols-outlined text-6xl text-violet-400">widgets</span>
+                    </div>
+                    <div class="flex items-start justify-between">
+                        <div>
+                            <h3 class="font-bold text-lg mb-1">General Preview</h3>
+                            <p class="text-sm text-gray-400">Base customizer template</p>
+                        </div>
+                        <span class="material-symbols-outlined text-violet-400">arrow_forward</span>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <span class="text-[10px] bg-violet-500/20 text-violet-300 px-2 py-1 rounded-full">Base Template</span>
+                        <span class="text-[10px] bg-indigo-500/20 text-indigo-300 px-2 py-1 rounded-full">Extensible</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Instructions Card -->
+            <div class="glass rounded-2xl p-6 h-full border border-dashed border-white/20">
+                <div class="h-full flex flex-col items-center justify-center text-center">
+                    <span class="material-symbols-outlined text-5xl text-gray-600 mb-4">info</span>
+                    <h3 class="font-bold text-lg mb-2 text-gray-400">How to Review</h3>
+                    <ul class="text-sm text-gray-500 space-y-2">
+                        <li class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm text-green-400">check_circle</span>
+                            Click any product to open
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm text-green-400">check_circle</span>
+                            All features are interactive
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-sm text-green-400">check_circle</span>
+                            Test on desktop & mobile
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/10 bg-black/30">
+        <div class="max-w-7xl mx-auto px-6 py-8">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div class="text-center md:text-left">
+                    <p class="text-sm text-gray-400">WooCommerce Product Customizer - UI/UX Preview</p>
+                    <p class="text-xs text-gray-600">All designs are interactive prototypes for approval</p>
+                </div>
+                <div class="flex items-center gap-6 text-sm text-gray-500">
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">devices</span>
+                        <span>Responsive</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">touch_app</span>
+                        <span>Interactive</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">speed</span>
+                        <span>Optimized</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Set current date
+        document.getElementById('date').textContent = new Date().toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    </script>
+</body>
+</html>

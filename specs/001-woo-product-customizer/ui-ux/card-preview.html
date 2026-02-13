@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visiting Card Designer - Professional</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    /* ==================== DESIGN SYSTEM ==================== */
+    :root {
+      --primary: #7c3aed;
+      --primary-hover: #6d28d9;
+      --primary-light: rgba(124, 58, 237, 0.1);
+
+      --accent: #f97316;
+      --accent-hover: #ea580c;
+
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+
+      --bg-main: #f8fafc;
+      --bg-white: #ffffff;
+      --bg-dark: #1e293b;
+
+      --border: #e2e8f0;
+      --border-dark: #cbd5e1;
+
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --text-muted: #94a3b8;
+
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-main);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* ==================== HEADER ==================== */
+    .designer-header {
+      background: var(--bg-white);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .back-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+      background: var(--bg-main);
+      color: var(--text-primary);
+    }
+
+    .product-title {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .header-btn {
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+
+    .btn-outline:hover {
+      background: var(--bg-main);
+      color: var(--text-primary);
+    }
+
+    .btn-primary {
+      background: var(--primary);
+      border: none;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--primary-hover);
+    }
+
+    /* ==================== MAIN LAYOUT ==================== */
+    .designer-container {
+      display: grid;
+      grid-template-columns: 280px 1fr 340px;
+      height: calc(100vh - 57px);
+    }
+
+    @media (max-width: 1024px) {
+      .designer-container {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+    }
+
+    /* ==================== LEFT PANEL ==================== */
+    .left-panel {
+      background: var(--bg-white);
+      border-right: 1px solid var(--border);
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    @media (max-width: 1024px) {
+      .left-panel {
+        display: none;
+      }
+    }
+
+    .panel-section {
+      margin-bottom: 24px;
+    }
+
+    .panel-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    /* Card Sides */
+    .card-sides {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .side-card {
+      background: var(--bg-main);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      position: relative;
+    }
+
+    .side-card:hover {
+      border-color: var(--border-dark);
+    }
+
+    .side-card.active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .side-card-preview {
+      width: 100%;
+      height: 50px;
+      background: var(--bg-white);
+      border-radius: 4px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+
+    .side-card.active .side-card-preview {
+      border-color: var(--primary);
+    }
+
+    .side-card-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .side-card.active .side-card-label {
+      color: var(--primary);
+    }
+
+    .side-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 18px;
+      height: 18px;
+      background: var(--success);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: white;
+    }
+
+    /* Paper Finish */
+    .finish-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .finish-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      background: var(--bg-main);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .finish-option:hover {
+      border-color: var(--border-dark);
+    }
+
+    .finish-option.active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .finish-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-white);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .finish-info {
+      flex: 1;
+    }
+
+    .finish-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .finish-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .finish-option.active .finish-label {
+      color: var(--primary);
+    }
+
+    /* Corner Style */
+    .corner-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .corner-option {
+      padding: 14px;
+      background: var(--bg-main);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .corner-option:hover {
+      border-color: var(--border-dark);
+    }
+
+    .corner-option.active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .corner-preview {
+      width: 40px;
+      height: 28px;
+      margin: 0 auto 8px;
+      background: var(--text-secondary);
+    }
+
+    .corner-preview.square {
+      border-radius: 0;
+    }
+
+    .corner-preview.rounded {
+      border-radius: 6px;
+    }
+
+    .corner-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .corner-option.active .corner-label {
+      color: var(--primary);
+    }
+
+    /* Quantity Tiers */
+    .quantity-tiers {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .tier-option {
+      padding: 14px 12px;
+      background: var(--bg-main);
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .tier-option:hover {
+      border-color: var(--border-dark);
+    }
+
+    .tier-option.active {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .tier-qty {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .tier-price {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .tier-option.active .tier-qty {
+      color: var(--primary);
+    }
+
+    /* ==================== CENTER CANVAS ==================== */
+    .center-canvas {
+      background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @media (max-width: 1024px) {
+      .center-canvas {
+        min-height: 400px;
+        padding: 20px;
+      }
+    }
+
+    /* Side Indicator */
+    .side-indicator {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      background: var(--bg-white);
+      padding: 8px 14px;
+      border-radius: 6px;
+      box-shadow: var(--shadow-md);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .side-indicator-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--primary);
+      border-radius: 50%;
+    }
+
+    .side-indicator-text {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    /* Flip Button */
+    .flip-btn {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: var(--bg-white);
+      padding: 10px 16px;
+      border-radius: 8px;
+      box-shadow: var(--shadow-md);
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+
+    .flip-btn:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* Card Canvas */
+    .card-canvas {
+      position: relative;
+      perspective: 1000px;
+    }
+
+    .card-flip-container {
+      position: relative;
+      width: 350px;
+      height: 200px;
+      transition: transform 0.6s;
+      transform-style: preserve-3d;
+    }
+
+    .card-flip-container.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-front,
+    .card-back {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+
+    .card-back {
+      transform: rotateY(180deg);
+    }
+
+    .card-surface {
+      width: 100%;
+      height: 100%;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .card-surface.matte {
+      background: #fafafa;
+    }
+
+    .card-surface.gloss {
+      background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 50%, #ffffff 100%);
+    }
+
+    .card-surface.textured {
+      background: #f5f5f0;
+      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d0d0d0' fill-opacity='0.2'%3E%3Cpath d='m36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    }
+
+    .card-surface.square {
+      border-radius: 0;
+    }
+
+    .card-surface.rounded {
+      border-radius: 8px;
+    }
+
+    .card-surface:hover {
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .card-surface.has-content {
+      justify-content: flex-start;
+      align-items: flex-start;
+    }
+
+    .card-surface img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .card-placeholder {
+      text-align: center;
+      color: var(--text-muted);
+    }
+
+    .card-placeholder-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+      opacity: 0.4;
+    }
+
+    .card-placeholder-text {
+      font-size: 13px;
+    }
+
+    /* Card Text Preview */
+    .card-text-preview {
+      position: absolute;
+      inset: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .card-company {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .card-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .card-title-text {
+      font-size: 11px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .card-contact {
+      font-size: 10px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* Mobile Side Tabs */
+    .mobile-side-tabs {
+      display: none;
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg-white);
+      border-radius: 10px;
+      padding: 4px;
+      box-shadow: var(--shadow-md);
+    }
+
+    @media (max-width: 1024px) {
+      .mobile-side-tabs {
+        display: flex;
+        gap: 4px;
+      }
+    }
+
+    .mobile-tab {
+      padding: 10px 24px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mobile-tab.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* ==================== RIGHT PANEL ==================== */
+    .right-panel {
+      background: var(--bg-white);
+      border-left: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    @media (max-width: 1024px) {
+      .right-panel {
+        border-left: none;
+        border-top: 1px solid var(--border);
+      }
+    }
+
+    .panel-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-main);
+    }
+
+    .panel-tab {
+      flex: 1;
+      padding: 14px;
+      background: transparent;
+      border: none;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+      border-bottom: 2px solid transparent;
+    }
+
+    .panel-tab:hover {
+      color: var(--text-secondary);
+    }
+
+    .panel-tab.active {
+      background: var(--bg-white);
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+    }
+
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    /* Design Mode Toggle */
+    .mode-toggle {
+      display: flex;
+      background: var(--bg-main);
+      border-radius: 10px;
+      padding: 4px;
+      margin-bottom: 16px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mode-btn.active {
+      background: var(--bg-white);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Upload Zone */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 16px;
+    }
+
+    .upload-zone:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .upload-zone.dragging {
+      border-color: var(--primary);
+      background: var(--primary-light);
+    }
+
+    .upload-zone.has-image {
+      border-style: solid;
+      border-color: var(--success);
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .upload-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--bg-main);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 12px;
+      font-size: 24px;
+    }
+
+    .upload-zone.has-image .upload-icon {
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    .upload-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+
+    .upload-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .upload-preview {
+      margin-top: 12px;
+    }
+
+    .upload-preview img {
+      max-width: 100%;
+      max-height: 80px;
+      border-radius: 6px;
+    }
+
+    .upload-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 12px;
+    }
+
+    .upload-action-btn {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .upload-change {
+      background: var(--bg-main);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+
+    .upload-remove {
+      background: rgba(239, 68, 68, 0.1);
+      border: none;
+      color: var(--error);
+    }
+
+    /* Text Inputs */
+    .text-input-group {
+      margin-bottom: 14px;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+    }
+
+    .text-input {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--bg-main);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--text-primary);
+      transition: all 0.2s;
+    }
+
+    .text-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-light);
+    }
+
+    .text-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    /* Demo Section */
+    .demo-section {
+      background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+      border: 1px solid #c4b5fd;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+
+    .demo-btn {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, var(--primary) 0%, #6d28d9 100%);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .demo-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+    }
+
+    .demo-hint {
+      font-size: 11px;
+      color: #5b21b6;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    /* ==================== PRICE BAR ==================== */
+    .price-bar {
+      background: var(--bg-white);
+      border-top: 1px solid var(--border);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .price-info {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .price-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .price-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .price-unit {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    .add-to-cart-btn {
+      padding: 14px 28px;
+      background: var(--accent);
+      border: none;
+      border-radius: 10px;
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .add-to-cart-btn:hover:not(:disabled) {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+    }
+
+    .add-to-cart-btn:disabled {
+      background: var(--border);
+      color: var(--text-muted);
+      cursor: not-allowed;
+    }
+
+    /* ==================== PREVIEW MODAL ==================== */
+    .preview-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s;
+    }
+
+    .preview-modal.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .preview-modal-content {
+      background: var(--bg-white);
+      border-radius: 16px;
+      padding: 24px;
+      max-width: 500px;
+      width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+    }
+
+    .preview-modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--bg-main);
+      border: none;
+      border-radius: 8px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+
+    .preview-modal-close:hover {
+      background: var(--border);
+      color: var(--text-primary);
+    }
+
+    .preview-modal-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .preview-cards {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .preview-card-item {
+      background: var(--bg-main);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .preview-card-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .preview-card-content {
+      background: white;
+      border-radius: 6px;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .preview-card-content img {
+      max-width: 100%;
+      max-height: 120px;
+    }
+
+    .preview-card-empty {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    /* Cart Notification */
+    .cart-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--bg-white);
+      border-radius: 12px;
+      padding: 16px 20px;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 1001;
+      transform: translateX(120%);
+      transition: transform 0.3s ease;
+    }
+
+    .cart-notification.show {
+      transform: translateX(0);
+    }
+
+    .cart-notification-icon {
+      width: 40px;
+      height: 40px;
+      background: rgba(16, 185, 129, 0.1);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .cart-notification-text {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .cart-notification-price {
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+  </style>
+</head>
+<body x-data="cardDesigner()">
+
+  <!-- Header -->
+  <header class="designer-header">
+    <div class="header-left">
+      <button class="back-btn">
+        <span>&larr;</span>
+        <span>Back to Shop</span>
+      </button>
+      <h1 class="product-title">Visiting Card Designer</h1>
+    </div>
+    <div class="header-right">
+      <button class="header-btn btn-outline" @click="showPreview = true">
+        Preview Both Sides
+      </button>
+      <button class="header-btn btn-primary" @click="loadDemo()">
+        Load Demo
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Designer -->
+  <div class="designer-container">
+
+    <!-- Left Panel -->
+    <aside class="left-panel">
+      <div class="panel-section">
+        <h3 class="panel-title">Card Side</h3>
+        <div class="card-sides">
+          <div class="side-card" :class="{ active: side === 'front' }" @click="side = 'front'; isFlipped = false">
+            <div class="side-badge" x-show="frontImage || (textFields.name || textFields.company)">&#10003;</div>
+            <div class="side-card-preview">&#9635;</div>
+            <div class="side-card-label">Front</div>
+          </div>
+          <div class="side-card" :class="{ active: side === 'back' }" @click="side = 'back'; isFlipped = true">
+            <div class="side-badge" x-show="backImage || textFields.address">&#10003;</div>
+            <div class="side-card-preview">&#9744;</div>
+            <div class="side-card-label">Back</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h3 class="panel-title">Paper Finish</h3>
+        <div class="finish-options">
+          <div class="finish-option" :class="{ active: finish === 'matte' }" @click="finish = 'matte'">
+            <div class="finish-icon">&#9633;</div>
+            <div class="finish-info">
+              <div class="finish-label">Matte</div>
+              <div class="finish-desc">Smooth, non-reflective</div>
+            </div>
+          </div>
+          <div class="finish-option" :class="{ active: finish === 'gloss' }" @click="finish = 'gloss'">
+            <div class="finish-icon">&#10024;</div>
+            <div class="finish-info">
+              <div class="finish-label">Gloss</div>
+              <div class="finish-desc">Shiny, vibrant colors</div>
+            </div>
+          </div>
+          <div class="finish-option" :class="{ active: finish === 'textured' }" @click="finish = 'textured'">
+            <div class="finish-icon">&#9641;</div>
+            <div class="finish-info">
+              <div class="finish-label">Textured</div>
+              <div class="finish-desc">Premium linen feel</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h3 class="panel-title">Corner Style</h3>
+        <div class="corner-options">
+          <div class="corner-option" :class="{ active: corners === 'square' }" @click="corners = 'square'">
+            <div class="corner-preview square"></div>
+            <div class="corner-label">Square</div>
+          </div>
+          <div class="corner-option" :class="{ active: corners === 'rounded' }" @click="corners = 'rounded'">
+            <div class="corner-preview rounded"></div>
+            <div class="corner-label">Rounded</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <h3 class="panel-title">Quantity</h3>
+        <div class="quantity-tiers">
+          <template x-for="tier in quantityTiers" :key="tier.qty">
+            <div class="tier-option" :class="{ active: quantity === tier.qty }" @click="quantity = tier.qty">
+              <div class="tier-qty" x-text="tier.qty"></div>
+              <div class="tier-price" x-text="'$' + tier.price + ' total'"></div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Canvas -->
+    <main class="center-canvas">
+      <!-- Side Indicator -->
+      <div class="side-indicator">
+        <div class="side-indicator-dot"></div>
+        <span class="side-indicator-text">Editing: <span x-text="side === 'front' ? 'Front Side' : 'Back Side'"></span></span>
+      </div>
+
+      <!-- Flip Button -->
+      <button class="flip-btn" @click="isFlipped = !isFlipped; side = isFlipped ? 'back' : 'front'">
+        <span>&#8635;</span>
+        <span>Flip Card</span>
+      </button>
+
+      <!-- Card Canvas -->
+      <div class="card-canvas">
+        <div class="card-flip-container" :class="{ flipped: isFlipped }">
+          <!-- Front -->
+          <div class="card-front">
+            <div class="card-surface" :class="[finish, corners, (frontImage || hasTextContent) ? 'has-content' : '']" @click="activeTab = 'design'; $refs.frontFileInput.click()">
+              <!-- Image -->
+              <img x-show="frontImage" :src="frontImage" alt="Front Design">
+
+              <!-- Text Preview -->
+              <div x-show="!frontImage && hasTextContent" class="card-text-preview">
+                <div x-show="textFields.company" class="card-company" x-text="textFields.company"></div>
+                <div x-show="textFields.name" class="card-name" x-text="textFields.name"></div>
+                <div x-show="textFields.title" class="card-title-text" x-text="textFields.title"></div>
+                <div class="card-contact">
+                  <div x-show="textFields.phone" x-text="textFields.phone"></div>
+                  <div x-show="textFields.email" x-text="textFields.email"></div>
+                </div>
+              </div>
+
+              <!-- Placeholder -->
+              <div x-show="!frontImage && !hasTextContent" class="card-placeholder">
+                <div class="card-placeholder-icon">+</div>
+                <div class="card-placeholder-text">Click to add front design</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Back -->
+          <div class="card-back">
+            <div class="card-surface" :class="[finish, corners, backImage ? 'has-content' : '']" @click="activeTab = 'design'; $refs.backFileInput.click()">
+              <img x-show="backImage" :src="backImage" alt="Back Design">
+
+              <!-- Back Text -->
+              <div x-show="!backImage && textFields.address" class="card-text-preview" style="justify-content: center; text-align: center;">
+                <div class="card-contact" style="font-size: 12px;" x-text="textFields.address"></div>
+              </div>
+
+              <div x-show="!backImage && !textFields.address" class="card-placeholder">
+                <div class="card-placeholder-icon">+</div>
+                <div class="card-placeholder-text">Click to add back design</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <input type="file" x-ref="frontFileInput" @change="handleFrontUpload($event)" accept="image/png,image/jpeg,image/jpg" style="display: none;">
+        <input type="file" x-ref="backFileInput" @change="handleBackUpload($event)" accept="image/png,image/jpeg,image/jpg" style="display: none;">
+      </div>
+
+      <!-- Mobile Side Tabs -->
+      <div class="mobile-side-tabs">
+        <button class="mobile-tab" :class="{ active: side === 'front' }" @click="side = 'front'; isFlipped = false">Front</button>
+        <button class="mobile-tab" :class="{ active: side === 'back' }" @click="side = 'back'; isFlipped = true">Back</button>
+      </div>
+    </main>
+
+    <!-- Right Panel -->
+    <aside class="right-panel">
+      <div class="panel-tabs">
+        <button class="panel-tab" :class="{ active: activeTab === 'design' }" @click="activeTab = 'design'">Upload</button>
+        <button class="panel-tab" :class="{ active: activeTab === 'text' }" @click="activeTab = 'text'">Text</button>
+      </div>
+
+      <div class="panel-content">
+        <!-- Design Tab -->
+        <div x-show="activeTab === 'design'">
+          <!-- Mode Toggle -->
+          <div class="mode-toggle">
+            <button class="mode-btn" :class="{ active: designMode === 'upload' }" @click="designMode = 'upload'">Upload Design</button>
+            <button class="mode-btn" :class="{ active: designMode === 'text' }" @click="designMode = 'text'; activeTab = 'text'">Enter Details</button>
+          </div>
+
+          <!-- Front Upload -->
+          <div style="margin-bottom: 16px;">
+            <label class="input-label" style="margin-bottom: 8px;">Front Side Design</label>
+            <div class="upload-zone"
+                 :class="{ 'dragging': isDraggingFront, 'has-image': frontImage }"
+                 @click="$refs.frontFileInput.click()"
+                 @drop.prevent="handleFrontDrop($event)"
+                 @dragover.prevent="isDraggingFront = true"
+                 @dragleave.prevent="isDraggingFront = false">
+
+              <template x-if="!frontImage">
+                <div>
+                  <div class="upload-icon" x-text="isDraggingFront ? '&#128229;' : '&#9635;'"></div>
+                  <div class="upload-title">Upload Front</div>
+                  <div class="upload-hint">PNG, JPG up to 10MB</div>
+                </div>
+              </template>
+
+              <template x-if="frontImage">
+                <div>
+                  <div class="upload-icon">&#10003;</div>
+                  <div class="upload-title" style="color: var(--success);">Front Uploaded</div>
+                  <div class="upload-preview">
+                    <img :src="frontImage" alt="Front Preview">
+                  </div>
+                  <div class="upload-actions">
+                    <button class="upload-action-btn upload-change" @click.stop="$refs.frontFileInput.click()">Change</button>
+                    <button class="upload-action-btn upload-remove" @click.stop="frontImage = null">Remove</button>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Back Upload -->
+          <div>
+            <label class="input-label" style="margin-bottom: 8px;">Back Side Design</label>
+            <div class="upload-zone"
+                 :class="{ 'dragging': isDraggingBack, 'has-image': backImage }"
+                 @click="$refs.backFileInput.click()"
+                 @drop.prevent="handleBackDrop($event)"
+                 @dragover.prevent="isDraggingBack = true"
+                 @dragleave.prevent="isDraggingBack = false">
+
+              <template x-if="!backImage">
+                <div>
+                  <div class="upload-icon" x-text="isDraggingBack ? '&#128229;' : '&#9744;'"></div>
+                  <div class="upload-title">Upload Back</div>
+                  <div class="upload-hint">PNG, JPG up to 10MB</div>
+                </div>
+              </template>
+
+              <template x-if="backImage">
+                <div>
+                  <div class="upload-icon">&#10003;</div>
+                  <div class="upload-title" style="color: var(--success);">Back Uploaded</div>
+                  <div class="upload-preview">
+                    <img :src="backImage" alt="Back Preview">
+                  </div>
+                  <div class="upload-actions">
+                    <button class="upload-action-btn upload-change" @click.stop="$refs.backFileInput.click()">Change</button>
+                    <button class="upload-action-btn upload-remove" @click.stop="backImage = null">Remove</button>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Demo Section -->
+          <div class="demo-section" style="margin-top: 16px;">
+            <button class="demo-btn" @click="loadDemo()">
+              <span>&#10024;</span>
+              <span>Load Sample Design</span>
+            </button>
+            <div class="demo-hint">See how your card will look</div>
+          </div>
+        </div>
+
+        <!-- Text Tab -->
+        <div x-show="activeTab === 'text'">
+          <div class="text-input-group">
+            <label class="input-label">Company Name</label>
+            <input type="text" class="text-input" x-model="textFields.company" placeholder="Your Company">
+          </div>
+
+          <div class="text-input-group">
+            <label class="input-label">Your Name</label>
+            <input type="text" class="text-input" x-model="textFields.name" placeholder="John Doe">
+          </div>
+
+          <div class="text-input-group">
+            <label class="input-label">Job Title</label>
+            <input type="text" class="text-input" x-model="textFields.title" placeholder="CEO & Founder">
+          </div>
+
+          <div class="text-input-group">
+            <label class="input-label">Phone</label>
+            <input type="text" class="text-input" x-model="textFields.phone" placeholder="+1 234 567 8900">
+          </div>
+
+          <div class="text-input-group">
+            <label class="input-label">Email</label>
+            <input type="text" class="text-input" x-model="textFields.email" placeholder="john@company.com">
+          </div>
+
+          <div class="text-input-group">
+            <label class="input-label">Address (Back Side)</label>
+            <input type="text" class="text-input" x-model="textFields.address" placeholder="123 Business St, City">
+          </div>
+        </div>
+      </div>
+
+      <!-- Price Bar -->
+      <div class="price-bar">
+        <div class="price-info">
+          <span class="price-label"><span x-text="quantity"></span> cards</span>
+          <span class="price-value">$<span x-text="price.toFixed(2)"></span></span>
+          <span class="price-unit">($<span x-text="(price / quantity).toFixed(3)"></span> each)</span>
+        </div>
+        <button class="add-to-cart-btn"
+                @click="addToCart()"
+                :disabled="!hasDesign">
+          <span>&#128722;</span>
+          <span x-text="hasDesign ? 'Add to Cart' : 'Add a design first'"></span>
+        </button>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Preview Modal -->
+  <div class="preview-modal" :class="{ active: showPreview }" @click.self="showPreview = false">
+    <div class="preview-modal-content">
+      <button class="preview-modal-close" @click="showPreview = false">&times;</button>
+      <h2 class="preview-modal-title">Card Preview - Both Sides</h2>
+      <div class="preview-cards">
+        <div class="preview-card-item">
+          <div class="preview-card-label">Front Side</div>
+          <div class="preview-card-content">
+            <img x-show="frontImage" :src="frontImage">
+            <span x-show="!frontImage && hasTextContent" style="font-size: 13px; color: var(--text-secondary);">Text design</span>
+            <span x-show="!frontImage && !hasTextContent" class="preview-card-empty">No design</span>
+          </div>
+        </div>
+        <div class="preview-card-item">
+          <div class="preview-card-label">Back Side</div>
+          <div class="preview-card-content">
+            <img x-show="backImage" :src="backImage">
+            <span x-show="!backImage && textFields.address" x-text="textFields.address" style="font-size: 13px; color: var(--text-secondary);"></span>
+            <span x-show="!backImage && !textFields.address" class="preview-card-empty">No design</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cart Notification -->
+  <div class="cart-notification" :class="{ show: showCartNotification }">
+    <div class="cart-notification-icon">&#10003;</div>
+    <div>
+      <div class="cart-notification-text">Added to Cart!</div>
+      <div class="cart-notification-price" x-text="'$' + cartNotificationPrice.toFixed(2)"></div>
+    </div>
+  </div>
+
+  <script>
+    function cardDesigner() {
+      return {
+        side: 'front',
+        isFlipped: false,
+        finish: 'matte',
+        corners: 'rounded',
+        quantity: 250,
+        quantityTiers: [
+          { qty: 100, price: 25 },
+          { qty: 250, price: 45 },
+          { qty: 500, price: 75 },
+          { qty: 1000, price: 120 }
+        ],
+        frontImage: null,
+        backImage: null,
+        textFields: {
+          company: '',
+          name: '',
+          title: '',
+          phone: '',
+          email: '',
+          address: ''
+        },
+        isDraggingFront: false,
+        isDraggingBack: false,
+        uploadError: null,
+        showPreview: false,
+        activeTab: 'design',
+        designMode: 'upload',
+        showCartNotification: false,
+        cartNotificationPrice: 0,
+
+        handleFrontUpload(event) {
+          const files = event.target.files;
+          if (files.length > 0) {
+            this.processFile(files[0], 'front');
+          }
+          event.target.value = '';
+        },
+
+        handleBackUpload(event) {
+          const files = event.target.files;
+          if (files.length > 0) {
+            this.processFile(files[0], 'back');
+          }
+          event.target.value = '';
+        },
+
+        handleFrontDrop(event) {
+          this.isDraggingFront = false;
+          const files = event.dataTransfer.files;
+          if (files.length > 0) {
+            this.processFile(files[0], 'front');
+          }
+        },
+
+        handleBackDrop(event) {
+          this.isDraggingBack = false;
+          const files = event.dataTransfer.files;
+          if (files.length > 0) {
+            this.processFile(files[0], 'back');
+          }
+        },
+
+        processFile(file, side) {
+          this.uploadError = null;
+
+          const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+          if (!validTypes.includes(file.type)) {
+            this.uploadError = 'Please upload PNG or JPG files only.';
+            return;
+          }
+
+          const maxSize = 10 * 1024 * 1024;
+          if (file.size > maxSize) {
+            this.uploadError = 'File size must be less than 10MB.';
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            if (side === 'front') {
+              this.frontImage = e.target.result;
+            } else {
+              this.backImage = e.target.result;
+            }
+          };
+          reader.onerror = () => {
+            this.uploadError = 'Failed to read file. Please try again.';
+          };
+          reader.readAsDataURL(file);
+        },
+
+        get hasTextContent() {
+          return this.textFields.name || this.textFields.company || this.textFields.title || this.textFields.phone || this.textFields.email;
+        },
+
+        get hasDesign() {
+          return this.frontImage || this.backImage || this.hasTextContent || this.textFields.address;
+        },
+
+        get price() {
+          const tier = this.quantityTiers.find(t => t.qty === this.quantity);
+          let total = tier ? tier.price : 45;
+
+          // Finish modifiers
+          if (this.finish === 'gloss') total += 5;
+          if (this.finish === 'textured') total += 10;
+
+          // Rounded corners
+          if (this.corners === 'rounded') total += 3;
+
+          // Double-sided
+          if ((this.frontImage || this.hasTextContent) && (this.backImage || this.textFields.address)) {
+            total += 10;
+          }
+
+          return total;
+        },
+
+        loadDemo() {
+          const demoFront = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="350" height="200" viewBox="0 0 350 200"><rect fill="#1e293b" width="350" height="200"/><rect fill="#7c3aed" x="0" y="0" width="8" height="200"/><text x="30" y="60" fill="white" font-size="24" font-weight="bold" font-family="Arial">ACME Corp</text><text x="30" y="90" fill="white" font-size="14" font-family="Arial">John Smith</text><text x="30" y="110" fill="#94a3b8" font-size="11" font-family="Arial">Chief Executive Officer</text><text x="30" y="150" fill="#94a3b8" font-size="11" font-family="Arial">+1 (555) 123-4567</text><text x="30" y="170" fill="#94a3b8" font-size="11" font-family="Arial">john@acmecorp.com</text></svg>');
+          const demoBack = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="350" height="200" viewBox="0 0 350 200"><rect fill="#f8fafc" width="350" height="200"/><rect fill="#7c3aed" x="0" y="0" width="350" height="8"/><text x="175" y="90" text-anchor="middle" fill="#1e293b" font-size="20" font-weight="bold" font-family="Arial">ACME Corp</text><text x="175" y="115" text-anchor="middle" fill="#64748b" font-size="11" font-family="Arial">123 Business Avenue, Suite 100</text><text x="175" y="135" text-anchor="middle" fill="#64748b" font-size="11" font-family="Arial">New York, NY 10001</text><text x="175" y="165" text-anchor="middle" fill="#7c3aed" font-size="11" font-family="Arial">www.acmecorp.com</text></svg>');
+
+          this.frontImage = demoFront;
+          this.backImage = demoBack;
+          this.side = 'front';
+          this.isFlipped = false;
+        },
+
+        addToCart() {
+          if (!this.hasDesign) return;
+
+          const cart = JSON.parse(localStorage.getItem('customizer_cart') || '[]');
+          const item = {
+            id: Date.now(),
+            type: 'Visiting Card',
+            finish: this.finish,
+            corners: this.corners,
+            quantity: this.quantity,
+            hasFront: !!(this.frontImage || this.hasTextContent),
+            hasBack: !!(this.backImage || this.textFields.address),
+            textFields: { ...this.textFields },
+            totalPrice: this.price
+          };
+
+          cart.push(item);
+          localStorage.setItem('customizer_cart', JSON.stringify(cart));
+
+          this.cartNotificationPrice = this.price;
+          this.showCartNotification = true;
+          setTimeout(() => {
+            this.showCartNotification = false;
+          }, 3000);
+        }
+      };
+    }
+  </script>
+</body>
+</html>

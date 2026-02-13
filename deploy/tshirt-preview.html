@@ -1,0 +1,2000 @@
+<!DOCTYPE html>
+<html class="light" lang="en" x-data="{ darkMode: false }" :class="{ 'dark': darkMode }">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>T-Shirt Product Designer - Sublimation Plugin Pro</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#308ce8",
+            "background-light": "#f6f7f8",
+            "background-dark": "#111921",
+          },
+          fontFamily: {
+            "display": ["Inter", "sans-serif"]
+          },
+          borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+        },
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    /* Toast animation */
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+    .toast-enter { animation: slideIn 0.3s ease forwards; }
+    .toast-leave { animation: slideOut 0.3s ease forwards; }
+
+    /* T-Shirt SVG Styles */
+    .tshirt-base { transition: fill 0.3s ease; }
+    /* ============================================
+       RESPONSIVE LAYOUT SYSTEM
+       Mobile-first, viewport-locked on desktop
+       ============================================ */
+
+    /* Mobile: allow scroll */
+    html, body { height: 100%; margin: 0; }
+
+    /* Mobile: stacked layout, scrollable */
+    .editor-grid {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+
+    /* Desktop: locked grid, no scroll */
+    @media (min-width: 1024px) {
+      html, body { overflow: hidden; }
+      .editor-grid {
+        display: grid;
+        grid-template-columns: 1fr minmax(320px, 420px);
+        grid-template-rows: 1fr;
+        height: calc(100vh - 57px);
+        overflow: hidden;
+        min-height: 0;
+      }
+    }
+
+    /* Canvas area */
+    .product-canvas {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      overflow: hidden;
+      min-height: 0;
+      /* Mobile: fixed height so controls visible below */
+      height: 55vh;
+      height: 55dvh;
+      flex-shrink: 0;
+    }
+    @media (min-width: 1024px) {
+      .product-canvas {
+        height: auto;
+        flex-shrink: unset;
+      }
+    }
+
+    /* Controls panel */
+    .controls-panel {
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      flex: 1;
+    }
+    @media (min-width: 1024px) {
+      .controls-panel { flex: none; }
+    }
+
+    /* Product mockup - fit within available space */
+    .product-mockup {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#111418] dark:text-white antialiased font-display">
+
+  <div x-data="tshirtDesigner()" class="relative flex h-screen w-full flex-col overflow-hidden">
+
+    <!-- Toast Notification -->
+    <div x-show="showToast"
+         x-transition:enter="toast-enter"
+         x-transition:leave="toast-leave"
+         class="fixed top-4 right-4 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 flex items-center gap-3 border border-gray-200 dark:border-gray-700">
+      <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900 flex items-center justify-center">
+        <span class="material-symbols-outlined text-green-600 dark:text-green-400">check_circle</span>
+      </div>
+      <div>
+        <p class="font-bold text-sm" x-text="toastMessage"></p>
+        <p class="text-xs text-gray-500">Added to your cart</p>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <header class="flex items-center justify-between border-b border-solid border-[#e5e7eb] dark:border-[#2d3748] bg-white dark:bg-[#1a202c] px-3 md:px-6 py-2 md:py-3 flex-shrink-0">
+      <div class="flex items-center gap-2 md:gap-4">
+        <div class="flex items-center justify-center size-8 md:size-10 bg-primary text-white rounded-lg">
+          <span class="material-symbols-outlined text-xl md:text-2xl">checkroom</span>
+        </div>
+        <div class="flex flex-col">
+          <h2 class="text-sm md:text-lg font-bold leading-tight tracking-tight">T-Shirt Designer</h2>
+          <span class="text-[10px] md:text-xs text-[#637588] dark:text-gray-400 hidden sm:block">Sublimation Plugin Pro</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-1 md:gap-3">
+        <!-- Export Dropdown -->
+        <div class="relative" x-data="{ open: false }">
+          <button @click="open = !open" class="flex items-center gap-1 px-2 md:px-4 py-1.5 md:py-2 bg-gray-100 dark:bg-gray-700 rounded-lg font-bold text-xs md:text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+            <span class="material-symbols-outlined text-lg">download</span>
+            <span class="hidden md:inline">Export</span>
+          </button>
+          <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
+            <div class="px-4 py-2 bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
+              <span class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Export Options</span>
+            </div>
+
+            <!-- Current View Export -->
+            <div class="border-b border-gray-200 dark:border-gray-600">
+              <div class="px-4 py-2 bg-gray-100 dark:bg-gray-700">
+                <span class="text-xs font-medium text-gray-600 dark:text-gray-400">Current View (<span class="text-primary" x-text="currentView.charAt(0).toUpperCase() + currentView.slice(1)"></span>)</span>
+              </div>
+              <button @click="exportAs('png', currentView); open = false" class="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3">
+                <span class="material-symbols-outlined text-base text-blue-500">image</span> PNG
+              </button>
+              <button @click="exportAs('jpeg', currentView); open = false" class="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3">
+                <span class="material-symbols-outlined text-base text-green-500">photo</span> JPEG
+              </button>
+              <button @click="exportAs('pdf', currentView); open = false" class="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3">
+                <span class="material-symbols-outlined text-base text-red-500">picture_as_pdf</span> PDF
+              </button>
+            </div>
+
+            <!-- Both Sides Export -->
+            <div>
+              <div class="px-4 py-2 bg-primary/10">
+                <span class="text-xs font-medium text-primary">⭐ Both Sides (Front + Back)</span>
+              </div>
+              <button @click="exportAs('png', 'both'); open = false" class="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3">
+                <span class="material-symbols-outlined text-base text-blue-500">image</span> PNG (Both)
+              </button>
+              <button @click="exportAs('jpeg', 'both'); open = false" class="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3">
+                <span class="material-symbols-outlined text-base text-green-500">photo</span> JPEG (Both)
+              </button>
+              <button @click="exportAs('pdf', 'both'); open = false" class="w-full px-4 py-2.5 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3">
+                <span class="material-symbols-outlined text-base text-red-500">picture_as_pdf</span> PDF (Both)
+              </button>
+            </div>
+          </div>
+        </div>
+        <button @click="showPreviewModal = true; $nextTick(() => renderPreviewText())" class="flex items-center cursor-pointer justify-center rounded-lg h-8 md:h-10 px-2 md:px-4 bg-[#f0f2f4] dark:bg-[#2d3748] text-[#111418] dark:text-white text-xs md:text-sm font-bold hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors gap-1">
+          <span class="material-symbols-outlined text-lg">preview</span>
+          <span class="hidden md:inline">Preview</span>
+        </button>
+        <button @click="darkMode = !darkMode" class="p-1.5 md:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+          <span class="material-symbols-outlined text-xl" x-text="darkMode ? 'light_mode' : 'dark_mode'"></span>
+        </button>
+        <button @click="addToCart()"
+                :disabled="!canAddToCart"
+                :class="canAddToCart ? 'bg-primary hover:bg-primary/90' : 'bg-gray-300 cursor-not-allowed'"
+                class="flex cursor-pointer items-center justify-center rounded-lg h-8 md:h-10 px-3 md:px-5 text-white text-xs md:text-sm font-bold shadow-sm transition-colors gap-1">
+          <span class="material-symbols-outlined text-lg">shopping_cart</span>
+          <span class="hidden sm:inline">Add to Cart</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="editor-grid">
+      <!-- Main Canvas Area -->
+      <div class="product-canvas relative bg-[#f0f2f4] dark:bg-[#0d1117]">
+
+        <!-- Front/Back View Tabs -->
+        <div class="absolute top-3 md:top-6 left-1/2 -translate-x-1/2 flex bg-white dark:bg-gray-800 rounded-full p-0.5 md:p-1 shadow-lg z-10">
+          <template x-for="view in views" :key="view.id">
+            <button @click="currentView = view.id; selectedTextId = null"
+                    :class="currentView === view.id ? 'bg-primary text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+                    class="px-3 md:px-5 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all flex items-center gap-1 md:gap-2">
+              <span x-text="view.label"></span>
+              <span x-show="viewHasContent(view.id)" class="w-2 h-2 bg-green-500 rounded-full"></span>
+            </button>
+          </template>
+        </div>
+
+        <!-- T-Shirt Mockup -->
+        <div class="w-full h-full flex items-center justify-center p-4">
+          <div class="relative w-full max-w-[280px] md:max-w-lg bg-white dark:bg-[#1a202c] rounded-2xl shadow-xl flex items-center justify-center overflow-hidden border border-[#e5e7eb] dark:border-[#2d3748] transition-transform duration-300 product-mockup" style="aspect-ratio: 4/5; max-height: 90%;"
+               :style="{ transform: `scale(${zoomLevel})` }">
+
+            <!-- HTML Text Overlay - sits on top of SVG for text rendering -->
+            <div id="textOverlay" class="absolute inset-0 pointer-events-none" style="z-index: 50;"></div>
+
+            <!-- T-Shirt SVG with Clip Masking -->
+            <svg id="mainSvg" viewBox="0 0 400 450" class="w-full h-full p-8">
+              <defs>
+                <!-- Clip path: t-shirt body (torso area for print) -->
+                <clipPath id="bodyClip">
+                  <path d="M 100,100 L 100,400 L 300,400 L 300,100 Z"/>
+                </clipPath>
+                <!-- Curvature gradient for realistic wrap look -->
+                <linearGradient id="shirtCurve" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stop-color="white" stop-opacity="0.15"/>
+                  <stop offset="35%" stop-color="white" stop-opacity="0"/>
+                  <stop offset="65%" stop-color="black" stop-opacity="0"/>
+                  <stop offset="100%" stop-color="black" stop-opacity="0.10"/>
+                </linearGradient>
+              </defs>
+
+              <!-- T-Shirt Shape (background) -->
+              <path class="tshirt-base" :fill="selectedColor.value" d="M 80,50 L 40,90 L 70,130 L 100,100 L 100,400 L 300,400 L 300,100 L 330,130 L 360,90 L 320,50 L 260,50 Q 200,80 140,50 Z"/>
+
+              <!-- === SVG MASKED DESIGN AREA === -->
+              <g clip-path="url(#bodyClip)">
+                <!-- Uploaded image: full cover, clipped to body (BACK LAYER) -->
+                <g @mousedown="startImageDrag($event)"
+                   @touchstart="startImageDrag($event)"
+                   style="cursor: move;">
+                  <image x-show="designs[currentView].image"
+                         :href="designs[currentView].image || ''"
+                         x="100" y="100" width="200" height="300"
+                         :preserveAspectRatio="(designs[currentView].fitMode || 'cover') === 'cover' ? 'xMidYMid slice' : 'xMidYMid meet'"
+                         :transform="getImageTransform(currentView)"
+                         style="pointer-events: all;"/>
+                </g>
+
+                <!-- Curvature overlay (makes flat image look wrapped) -->
+                <rect x="100" y="100" width="200" height="300" fill="url(#shirtCurve)" pointer-events="none"/>
+              </g>
+
+              <!-- Text is rendered via HTML overlay (Alpine x-text doesn't work in SVG) -->
+
+              <!-- Collar (on top of design) -->
+              <path fill="none" :stroke="adjustColor(selectedColor.value, -20)" stroke-width="3" d="M 140,50 Q 200,85 260,50"/>
+              <!-- Sleeve Lines -->
+              <path fill="none" :stroke="adjustColor(selectedColor.value, -15)" stroke-width="2" d="M 100,100 L 70,130"/>
+              <path fill="none" :stroke="adjustColor(selectedColor.value, -15)" stroke-width="2" d="M 300,100 L 330,130"/>
+              <!-- Shirt Highlight -->
+              <path fill="rgba(255,255,255,0.1)" d="M 100,100 L 100,400 L 120,400 L 120,100 Z"/>
+
+              <!-- Back view indicator -->
+              <template x-if="currentView === 'back'">
+                <path fill="none" :stroke="adjustColor(selectedColor.value, -10)" stroke-width="1" stroke-dasharray="5,5" d="M 200,85 L 200,400"/>
+              </template>
+
+              <!-- Safe Zone Border (always visible when enabled) -->
+              <rect x-show="showDesignZone"
+                    x="100" y="100" width="200" height="300" rx="4"
+                    fill="none" stroke="rgba(48,140,232,0.4)" stroke-width="2" stroke-dasharray="8,4"/>
+
+              <!-- Safe Zone Corners (visual guides) -->
+              <g x-show="showDesignZone" stroke="rgba(48,140,232,0.6)" stroke-width="2.5" fill="none">
+                <!-- Top-left corner -->
+                <path d="M 100,110 L 100,100 L 110,100"/>
+                <!-- Top-right corner -->
+                <path d="M 290,100 L 300,100 L 300,110"/>
+                <!-- Bottom-left corner -->
+                <path d="M 100,390 L 100,400 L 110,400"/>
+                <!-- Bottom-right corner -->
+                <path d="M 290,400 L 300,400 L 300,390"/>
+              </g>
+            </svg>
+
+            <!-- Empty state label (HTML overlay, only when no content) -->
+            <div x-show="!designs[currentView].image && textLayers[currentView].length === 0 && showDesignZone"
+                 class="absolute top-[22%] left-[26%] w-[48%] h-[45%] flex items-center justify-center pointer-events-none select-none">
+              <div class="text-center opacity-60">
+                <span class="material-symbols-outlined text-4xl block text-primary/40 mb-2">add_photo_alternate</span>
+                <span class="text-[10px] font-bold uppercase tracking-widest text-primary/50 block" x-text="currentView + ' Print Area'"></span>
+                <span class="text-[9px] text-gray-400 dark:text-gray-500 mt-1 block">Safe Zone</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Zoom Controls -->
+        <div class="absolute bottom-8 left-8 flex items-center gap-4 bg-white dark:bg-[#1a202c] px-4 py-2 rounded-full shadow-lg border border-[#e5e7eb] dark:border-[#2d3748]">
+          <button @click="zoomLevel = Math.max(0.5, zoomLevel - 0.1)" class="text-[#637588] hover:text-primary transition-colors">
+            <span class="material-symbols-outlined">remove</span>
+          </button>
+          <span class="text-sm font-medium w-12 text-center" x-text="Math.round(zoomLevel * 100) + '%'"></span>
+          <button @click="zoomLevel = Math.min(1.5, zoomLevel + 0.1)" class="text-[#637588] hover:text-primary transition-colors">
+            <span class="material-symbols-outlined">add</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Right Sidebar (Controls) -->
+      <aside class="controls-panel border-l border-[#e5e7eb] dark:border-[#2d3748] bg-white dark:bg-[#1a202c] flex flex-col">
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-y-auto" style="overscroll-behavior: contain;">
+          <!-- Tabs -->
+          <div class="flex border-b border-[#e5e7eb] dark:border-[#2d3748]">
+            <button @click="activeTab = 'edit'"
+                    :class="activeTab === 'edit' ? 'font-bold border-b-2 border-primary text-primary' : 'text-[#637588]'"
+                    class="flex-1 py-4 text-sm transition-colors">Edit</button>
+            <button @click="activeTab = 'options'"
+                    :class="activeTab === 'options' ? 'font-bold border-b-2 border-primary text-primary' : 'text-[#637588]'"
+                    class="flex-1 py-4 text-sm transition-colors">Options</button>
+            <button @click="activeTab = 'pricing'"
+                    :class="activeTab === 'pricing' ? 'font-bold border-b-2 border-primary text-primary' : 'text-[#637588]'"
+                    class="flex-1 py-4 text-sm transition-colors">Pricing</button>
+          </div>
+
+          <!-- Edit Tab -->
+          <template x-if="activeTab === 'edit'">
+            <div>
+              <!-- Current View Indicator -->
+              <div class="px-6 pt-4 pb-2">
+                <div class="flex items-center justify-between bg-primary/10 rounded-lg px-4 py-3">
+                  <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-primary">edit</span>
+                    <span class="font-bold text-primary">Editing: <span x-text="currentView.charAt(0).toUpperCase() + currentView.slice(1)"></span> View</span>
+                  </div>
+                  <div class="flex gap-1">
+                    <template x-for="view in views" :key="view.id">
+                      <button @click="currentView = view.id"
+                              :class="currentView === view.id ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700'"
+                              class="px-3 py-1 rounded text-xs font-semibold transition-colors"
+                              x-text="view.label">
+                      </button>
+                    </template>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Upload Section -->
+              <div class="p-6 border-b border-[#e5e7eb] dark:border-[#2d3748]">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-[#637588] mb-4">
+                  Upload Design (<span x-text="currentView.charAt(0).toUpperCase() + currentView.slice(1)"></span>)
+                </h3>
+                <div @click="$refs.fileInput.click()"
+                     @dragover.prevent="isDragging = true"
+                     @dragleave.prevent="isDragging = false"
+                     @drop.prevent="handleDrop($event)"
+                     :class="isDragging ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-600'"
+                     class="border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary transition-colors">
+                  <template x-if="!designs[currentView].image">
+                    <div class="text-center">
+                      <span class="material-symbols-outlined text-3xl text-[#637588]">cloud_upload</span>
+                      <p class="text-sm font-medium mt-2">Drop your <span x-text="currentView"></span> design here</p>
+                      <p class="text-xs text-[#637588]">PNG, JPG, PDF up to 10MB</p>
+                    </div>
+                  </template>
+                  <template x-if="designs[currentView].image">
+                    <div class="text-center">
+                      <img :src="designs[currentView].image" class="max-h-20 mx-auto rounded mb-2" alt="Preview">
+                      <p class="text-xs text-green-600 font-medium"><span x-text="currentView.charAt(0).toUpperCase() + currentView.slice(1)"></span> design uploaded!</p>
+                    </div>
+                  </template>
+                </div>
+                <input x-ref="fileInput" type="file" @change="handleFileUpload($event)" accept="image/png,image/jpeg,image/webp" class="hidden">
+                <template x-if="designs[currentView].image">
+                  <div class="mt-3 space-y-3">
+                    <!-- Safe Zone Warning -->
+                    <div x-show="(designs[currentView].scalePercent || 100) > 130" class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+                      <div class="flex items-start gap-2">
+                        <span class="material-symbols-outlined text-orange-500 text-lg">warning</span>
+                        <div>
+                          <p class="text-xs font-semibold text-orange-700 dark:text-orange-400">Image may be cropped</p>
+                          <p class="text-xs text-orange-600 dark:text-orange-500 mt-0.5">Scale above 130% may cause edges to be cut in export. Reduce scale or adjust position.</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-3">
+                      <div>
+                        <label class="text-xs font-medium text-gray-500 mb-1 block">Scale</label>
+                        <div class="flex items-center gap-2">
+                          <input type="range" min="10" max="200" :value="designs[currentView].scalePercent || 100"
+                                 @input="designs[currentView].scalePercent = parseInt($event.target.value); updateSvgImage()" class="flex-1 accent-primary">
+                          <span class="text-xs font-mono w-10 text-right" x-text="(designs[currentView].scalePercent || 100) + '%'"></span>
+                        </div>
+                        <div class="mt-1 flex items-center gap-1">
+                          <div class="flex-1 h-1 bg-gray-200 dark:bg-gray-600 rounded-full overflow-hidden">
+                            <div class="h-full bg-green-500" :style="{width: 'min(100%, ' + ((designs[currentView].scalePercent || 100) / 2) + '%)'}"
+                                 :class="(designs[currentView].scalePercent || 100) > 130 ? 'bg-orange-500' : 'bg-green-500'"></div>
+                          </div>
+                          <span class="text-[10px] font-medium"
+                                :class="(designs[currentView].scalePercent || 100) > 130 ? 'text-orange-500' : 'text-green-600'">
+                            <span x-show="(designs[currentView].scalePercent || 100) <= 130">✓ Safe</span>
+                            <span x-show="(designs[currentView].scalePercent || 100) > 130">⚠ High</span>
+                          </span>
+                        </div>
+                      </div>
+                      <div>
+                        <label class="text-xs font-medium text-gray-500 mb-1 block">Rotation</label>
+                        <div class="flex items-center gap-2">
+                          <input type="range" min="-180" max="180" :value="designs[currentView].rotation || 0"
+                                 @input="designs[currentView].rotation = parseInt($event.target.value); updateSvgImage()" class="flex-1 accent-primary">
+                          <span class="text-xs font-mono w-12 text-right" x-text="(designs[currentView].rotation || 0) + '°'"></span>
+                        </div>
+                      </div>
+                      <div>
+                        <label class="text-xs font-medium text-gray-500 mb-1 block">Image Fit</label>
+                        <div class="flex gap-2">
+                          <button @click="designs[currentView].fitMode = 'contain'"
+                                  :class="(designs[currentView].fitMode || 'cover') === 'contain' ? 'bg-primary text-white' : 'border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
+                                  class="flex-1 py-2 text-xs font-medium rounded-lg flex items-center justify-center gap-1">
+                            <span class="material-symbols-outlined text-sm">fit_screen</span> Contain
+                          </button>
+                          <button @click="designs[currentView].fitMode = 'cover'"
+                                  :class="(designs[currentView].fitMode || 'cover') === 'cover' ? 'bg-primary text-white' : 'border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
+                                  class="flex-1 py-2 text-xs font-medium rounded-lg flex items-center justify-center gap-1">
+                            <span class="material-symbols-outlined text-sm">aspect_ratio</span> Fill/Cover
+                          </button>
+                        </div>
+                      </div>
+                      <div class="flex gap-2">
+                        <button @click="designs[currentView].flipH = !designs[currentView].flipH" class="flex-1 py-2 text-xs font-medium border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center gap-1">
+                          <span class="material-symbols-outlined text-sm">flip</span> Flip H
+                        </button>
+                        <button @click="designs[currentView].flipV = !designs[currentView].flipV" class="flex-1 py-2 text-xs font-medium border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center gap-1">
+                          <span class="material-symbols-outlined text-sm" style="transform:rotate(90deg)">flip</span> Flip V
+                        </button>
+                        <button @click="designs[currentView].scalePercent = 100; designs[currentView].rotation = 0; designs[currentView].flipH = false; designs[currentView].flipV = false; designs[currentView].posX = 0.5; designs[currentView].posY = 0.5" class="flex-1 py-2 text-xs font-medium border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center gap-1">
+                          <span class="material-symbols-outlined text-sm">center_focus_strong</span> Reset
+                        </button>
+                      </div>
+                      <button @click="fitToSafeZone()" class="w-full py-2.5 text-sm font-bold bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined text-lg">fit_screen</span> Fit to Safe Zone
+                      </button>
+                    </div>
+                    <button @click="designs[currentView].image = null" class="w-full py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                      <span class="material-symbols-outlined text-sm align-middle mr-1">delete</span> Remove Image
+                    </button>
+                  </div>
+                </template>
+              </div>
+
+              <!-- Text Editor Section (Multi-Layer) -->
+              <div class="p-6 border-b border-[#e5e7eb] dark:border-[#2d3748]">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-[#637588] mb-4">
+                  Add Text (<span x-text="currentView.charAt(0).toUpperCase() + currentView.slice(1)"></span>)
+                </h3>
+                <div class="space-y-4">
+                  <!-- Input -->
+                  <div>
+                    <label class="block text-xs font-semibold mb-1 text-[#637588]">Your Text</label>
+                    <div class="flex gap-2">
+                      <input x-model="textInput"
+                             @keyup.enter="addTextLayer()"
+                             class="flex-1 rounded-lg border border-[#e5e7eb] dark:border-[#2d3748] bg-white dark:bg-[#1a202c] px-3 py-2 text-sm focus:ring-2 focus:ring-primary outline-none"
+                             type="text"
+                             :placeholder="'Enter ' + currentView + ' text...'"
+                             maxlength="50"/>
+                      <button type="button" @click="addTextLayer()" class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">Add</button>
+                    </div>
+                  </div>
+
+                  <!-- Text Layer List (with delete/visibility) -->
+                  <template x-if="textLayers[currentView].length > 0">
+                    <div class="space-y-1.5">
+                      <label class="text-xs font-semibold text-[#637588] block">Added Texts</label>
+                      <template x-for="layer in textLayers[currentView]" :key="layer.id">
+                        <div @click="selectedTextId = layer.id"
+                             :class="selectedTextId === layer.id ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-600 hover:border-primary/50'"
+                             class="flex items-center justify-between border rounded-lg px-3 py-2 cursor-pointer transition-all">
+                          <div class="flex items-center gap-2 min-w-0">
+                            <span class="material-symbols-outlined text-sm text-purple-500">text_fields</span>
+                            <span class="text-sm font-medium truncate" x-text="layer.content"></span>
+                          </div>
+                          <div class="flex items-center gap-1 flex-shrink-0">
+                            <button @click.stop="layer.visible = !layer.visible; renderTextLayers()" class="w-7 h-7 rounded flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700" title="Show/Hide">
+                              <span class="material-symbols-outlined text-sm" x-text="layer.visible ? 'visibility' : 'visibility_off'"
+                                    :class="layer.visible ? 'text-gray-500' : 'text-gray-400'"></span>
+                            </button>
+                            <button @click.stop="deleteTextLayer(layer.id)" class="w-7 h-7 rounded flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500" title="Delete">
+                              <span class="material-symbols-outlined text-sm">delete</span>
+                            </button>
+                          </div>
+                        </div>
+                      </template>
+                    </div>
+                  </template>
+
+                  <!-- Selected Text Controls (show when a text layer is selected) -->
+                  <template x-if="getSelectedText()">
+                    <div class="space-y-3 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                      <!-- Bold / Italic / Color -->
+                      <div class="flex gap-2">
+                        <button @click="getSelectedText().bold = !getSelectedText().bold; renderTextLayers()"
+                                :class="getSelectedText()?.bold ? 'bg-primary text-white' : 'border border-[#e5e7eb] dark:border-[#2d3748]'"
+                                class="flex-1 h-9 rounded-lg flex items-center justify-center transition-colors">
+                          <span class="material-symbols-outlined">format_bold</span>
+                        </button>
+                        <button @click="getSelectedText().italic = !getSelectedText().italic; renderTextLayers()"
+                                :class="getSelectedText()?.italic ? 'bg-primary text-white' : 'border border-[#e5e7eb] dark:border-[#2d3748]'"
+                                class="flex-1 h-9 rounded-lg flex items-center justify-center transition-colors">
+                          <span class="material-symbols-outlined">format_italic</span>
+                        </button>
+                        <div class="flex-1 relative">
+                          <input type="color" :value="getSelectedText()?.color || '#000000'" @input="getSelectedText().color = $event.target.value; renderTextLayers()" class="w-full h-9 rounded-lg cursor-pointer border-0">
+                        </div>
+                      </div>
+
+                      <!-- Text Direction -->
+                      <div>
+                        <label class="text-xs font-semibold text-[#637588] mb-1 block">Text Direction</label>
+                        <div class="flex gap-1.5">
+                          <button @click="getSelectedText().rotation = 0; renderTextLayers()"
+                                  :class="(getSelectedText()?.rotation || 0) === 0 ? 'bg-primary text-white' : 'border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
+                                  class="flex-1 h-9 rounded-lg flex items-center justify-center text-xs font-medium gap-1">
+                            <span class="material-symbols-outlined text-sm">text_rotation_none</span> Straight
+                          </button>
+                          <button @click="getSelectedText().rotation = -90; renderTextLayers()"
+                                  :class="(getSelectedText()?.rotation || 0) === -90 ? 'bg-primary text-white' : 'border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
+                                  class="flex-1 h-9 rounded-lg flex items-center justify-center text-xs font-medium gap-1">
+                            <span class="material-symbols-outlined text-sm">text_rotate_vertical</span> Up
+                          </button>
+                          <button @click="getSelectedText().rotation = 90; renderTextLayers()"
+                                  :class="(getSelectedText()?.rotation || 0) === 90 ? 'bg-primary text-white' : 'border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
+                                  class="flex-1 h-9 rounded-lg flex items-center justify-center text-xs font-medium gap-1">
+                            <span class="material-symbols-outlined text-sm" style="transform:scaleX(-1)">text_rotate_vertical</span> Down
+                          </button>
+                        </div>
+                      </div>
+
+                      <!-- Custom Angle -->
+                      <div>
+                        <label class="text-xs font-semibold text-[#637588] mb-1 block">Custom Angle</label>
+                        <div class="flex items-center gap-2">
+                          <input type="range" min="-180" max="180" :value="getSelectedText()?.rotation || 0"
+                                 @input="getSelectedText().rotation = parseInt($event.target.value); renderTextLayers()" class="flex-1 accent-primary">
+                          <span class="text-xs font-mono w-12 text-right" x-text="(getSelectedText()?.rotation || 0) + '°'"></span>
+                        </div>
+                      </div>
+
+                      <!-- Position Presets (9-grid) -->
+                      <div>
+                        <label class="text-xs font-semibold text-[#637588] mb-1.5 block">Position</label>
+                        <div class="grid grid-cols-3 gap-1">
+                          <button @click="setTextPos(0.2, 0.15)" class="h-7 rounded border border-gray-200 dark:border-gray-600 hover:bg-primary hover:text-white text-[10px] font-medium transition-colors">TL</button>
+                          <button @click="setTextPos(0.5, 0.15)" class="h-7 rounded border border-gray-200 dark:border-gray-600 hover:bg-primary hover:text-white text-[10px] font-medium transition-colors">TC</button>
+                          <button @click="setTextPos(0.8, 0.15)" class="h-7 rounded border border-gray-200 dark:border-gray-600 hover:bg-primary hover:text-white text-[10px] font-medium transition-colors">TR</button>
+                          <button @click="setTextPos(0.2, 0.5)" class="h-7 rounded border border-gray-200 dark:border-gray-600 hover:bg-primary hover:text-white text-[10px] font-medium transition-colors">ML</button>
+                          <button @click="setTextPos(0.5, 0.5)" class="h-7 rounded bg-gray-200 dark:bg-gray-600 hover:bg-primary hover:text-white text-[10px] font-bold transition-colors">C</button>
+                          <button @click="setTextPos(0.8, 0.5)" class="h-7 rounded border border-gray-200 dark:border-gray-600 hover:bg-primary hover:text-white text-[10px] font-medium transition-colors">MR</button>
+                          <button @click="setTextPos(0.2, 0.85)" class="h-7 rounded border border-gray-200 dark:border-gray-600 hover:bg-primary hover:text-white text-[10px] font-medium transition-colors">BL</button>
+                          <button @click="setTextPos(0.5, 0.85)" class="h-7 rounded border border-gray-200 dark:border-gray-600 hover:bg-primary hover:text-white text-[10px] font-medium transition-colors">BC</button>
+                          <button @click="setTextPos(0.8, 0.85)" class="h-7 rounded border border-gray-200 dark:border-gray-600 hover:bg-primary hover:text-white text-[10px] font-medium transition-colors">BR</button>
+                        </div>
+                      </div>
+
+                      <!-- Font Size -->
+                      <div>
+                        <label class="text-xs font-semibold text-[#637588] mb-1 block">Font Size</label>
+                        <div class="flex items-center gap-2">
+                          <input type="range" min="12" max="60" :value="getSelectedText()?.fontSize || 28"
+                                 @input="getSelectedText().fontSize = parseInt($event.target.value); renderTextLayers()" class="flex-1 accent-primary">
+                          <span class="text-xs font-mono w-10 text-right" x-text="(getSelectedText()?.fontSize || 28) + 'px'"></span>
+                        </div>
+                      </div>
+
+                      <!-- Text Outline -->
+                      <div>
+                        <label class="text-xs font-semibold text-[#637588] mb-1 block">Text Outline</label>
+                        <div class="flex gap-2 items-center">
+                          <button @click="getSelectedText().stroke = !getSelectedText().stroke; renderTextLayers()"
+                                  :class="getSelectedText()?.stroke ? 'bg-primary text-white' : 'border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
+                                  class="flex-1 h-9 rounded-lg flex items-center justify-center text-xs font-medium gap-1">
+                            <span class="material-symbols-outlined text-sm">border_color</span>
+                            <span x-text="getSelectedText()?.stroke ? 'Outline ON' : 'Outline OFF'"></span>
+                          </button>
+                          <template x-if="getSelectedText()?.stroke">
+                            <input type="color" :value="getSelectedText()?.strokeColor || '#000000'" @input="getSelectedText().strokeColor = $event.target.value" class="w-9 h-9 rounded-lg cursor-pointer border-0">
+                          </template>
+                        </div>
+                      </div>
+
+                      <!-- Font Family -->
+                      <div>
+                        <label class="text-xs font-semibold text-[#637588] mb-1 block">Font Family</label>
+                        <select @change="getSelectedText().fontFamily = $event.target.value; renderTextLayers()" :value="getSelectedText()?.fontFamily || 'Arial'"
+                                class="w-full rounded-lg border border-[#e5e7eb] dark:border-[#2d3748] bg-white dark:bg-[#1a202c] text-sm py-2 px-3 focus:ring-2 focus:ring-primary outline-none">
+                          <template x-for="font in fonts" :key="font">
+                            <option :value="font" x-text="font"></option>
+                          </template>
+                        </select>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- All Views Summary -->
+              <div class="p-6 border-b border-[#e5e7eb] dark:border-[#2d3748]">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-[#637588] mb-4">All Views Summary</h3>
+                <div class="space-y-2">
+                  <template x-for="view in views" :key="view.id">
+                    <div @click="currentView = view.id"
+                         :class="currentView === view.id ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-600 hover:border-primary/50'"
+                         class="flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all">
+                      <div class="flex items-center gap-3">
+                        <div :class="viewHasContent(view.id) ? 'bg-green-100 dark:bg-green-900' : 'bg-gray-100 dark:bg-gray-700'"
+                             class="w-10 h-10 rounded-lg flex items-center justify-center">
+                          <span class="material-symbols-outlined text-lg"
+                                :class="viewHasContent(view.id) ? 'text-green-600 dark:text-green-400' : 'text-gray-400'"
+                                x-text="viewHasContent(view.id) ? 'check_circle' : 'radio_button_unchecked'"></span>
+                        </div>
+                        <div>
+                          <div class="font-semibold text-sm" x-text="view.label + ' View'"></div>
+                          <div class="text-xs text-gray-500">
+                            <template x-if="designs[view.id].image">
+                              <span class="text-green-600">Image uploaded</span>
+                            </template>
+                            <template x-if="!designs[view.id].image && textLayers[view.id].length > 0">
+                              <span class="text-blue-600">Text added (<span x-text="textLayers[view.id].length"></span>)</span>
+                            </template>
+                            <template x-if="!designs[view.id].image && textLayers[view.id].length === 0">
+                              <span>No design yet</span>
+                            </template>
+                          </div>
+                        </div>
+                      </div>
+                      <span class="material-symbols-outlined text-gray-400">chevron_right</span>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <!-- T-Shirt Color Section -->
+              <div class="p-6">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-[#637588] mb-4">T-Shirt Color</h3>
+                <div class="flex flex-wrap gap-3">
+                  <template x-for="color in tshirtColors" :key="color.value">
+                    <button @click="selectedColor = color"
+                            :title="color.name"
+                            :class="selectedColor.value === color.value ? 'ring-2 ring-primary ring-offset-2' : 'border border-gray-200'"
+                            :style="{ backgroundColor: color.value }"
+                            class="size-10 rounded-full transition-all hover:scale-110">
+                    </button>
+                  </template>
+                </div>
+                <p class="text-xs text-[#637588] mt-3">Selected: <span class="font-medium" x-text="selectedColor.name"></span></p>
+              </div>
+            </div>
+          </template>
+
+          <!-- Options Tab -->
+          <template x-if="activeTab === 'options'">
+            <div class="p-6 space-y-6">
+              <!-- Size Selection -->
+              <div>
+                <h3 class="text-sm font-bold uppercase tracking-wider text-[#637588] mb-4">Select Size</h3>
+                <div class="grid grid-cols-5 gap-2">
+                  <template x-for="size in sizes" :key="size">
+                    <button @click="selectedSize = size"
+                            :class="selectedSize === size ? 'border-primary bg-primary/10 text-primary' : 'border-gray-200 dark:border-gray-600 hover:border-primary'"
+                            class="py-3 border-2 rounded-lg font-bold text-sm transition-colors"
+                            x-text="size">
+                    </button>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Material Selection -->
+              <div>
+                <h3 class="text-sm font-bold uppercase tracking-wider text-[#637588] mb-4">Material</h3>
+                <div class="space-y-2">
+                  <template x-for="material in materials" :key="material.value">
+                    <button @click="selectedMaterial = material.value"
+                            :class="selectedMaterial === material.value ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-600'"
+                            class="w-full p-4 border-2 rounded-lg text-left transition-colors hover:border-primary">
+                      <div class="flex items-center justify-between">
+                        <div>
+                          <div class="font-bold text-sm" x-text="material.label"></div>
+                          <div class="text-xs text-[#637588]" x-text="material.description"></div>
+                        </div>
+                        <template x-if="material.price > 0">
+                          <span class="text-xs font-bold text-primary">+$<span x-text="material.price.toFixed(2)"></span></span>
+                        </template>
+                      </div>
+                    </button>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Display Options -->
+              <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-[#637588] mb-4">Display Options</h3>
+                <div class="space-y-4">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <span class="text-sm font-medium">Show Safe Zone</span>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Print area boundary guide</p>
+                    </div>
+                    <button @click="showDesignZone = !showDesignZone"
+                            :class="showDesignZone ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'"
+                            class="w-10 h-5 rounded-full relative transition-colors flex-shrink-0">
+                      <div :class="showDesignZone ? 'right-1' : 'left-1'" class="absolute top-1 size-3 bg-white rounded-full transition-all"></div>
+                    </button>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-sm font-medium">Dark Mode</span>
+                    <button @click="darkMode = !darkMode"
+                            :class="darkMode ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'"
+                            class="w-10 h-5 rounded-full relative transition-colors">
+                      <div :class="darkMode ? 'right-1' : 'left-1'" class="absolute top-1 size-3 bg-white rounded-full transition-all"></div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- File Formats -->
+              <div class="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-[#637588] mb-3">Accepted Formats</h3>
+                <div class="flex gap-2">
+                  <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-xs font-medium">JPEG</span>
+                  <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-xs font-medium">PNG</span>
+                  <span class="px-3 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-xs font-medium">PDF</span>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- Pricing Tab -->
+          <template x-if="activeTab === 'pricing'">
+            <div class="p-6 space-y-6">
+              <h3 class="text-sm font-bold uppercase tracking-wider text-[#637588] mb-4">Price Breakdown</h3>
+
+              <div class="space-y-3">
+                <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                  <span class="text-[#637588]">Base T-Shirt (<span x-text="selectedSize"></span>)</span>
+                  <span class="font-medium">$<span x-text="basePrice.toFixed(2)"></span></span>
+                </div>
+                <template x-if="getMaterialPrice() > 0">
+                  <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <span class="text-[#637588]">Premium Material</span>
+                    <span class="font-medium">+$<span x-text="getMaterialPrice().toFixed(2)"></span></span>
+                  </div>
+                </template>
+                <!-- Per-view pricing -->
+                <template x-for="view in views" :key="view.id">
+                  <template x-if="viewHasContent(view.id)">
+                    <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                      <span class="text-[#637588]"><span x-text="view.label"></span> Print</span>
+                      <span class="font-medium">+$5.00</span>
+                    </div>
+                  </template>
+                </template>
+                <template x-if="selectedColor.value !== '#ffffff'">
+                  <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <span class="text-[#637588]">Colored Shirt</span>
+                    <span class="font-medium">+$2.00</span>
+                  </div>
+                </template>
+              </div>
+
+              <div class="flex justify-between py-3 bg-gray-50 dark:bg-gray-800 rounded-lg px-4">
+                <span class="font-bold">Total</span>
+                <span class="font-bold text-primary text-xl">$<span x-text="totalPrice.toFixed(2)"></span></span>
+              </div>
+
+              <!-- Views with designs info -->
+              <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                <div class="flex items-center gap-2 text-blue-700 dark:text-blue-400">
+                  <span class="material-symbols-outlined">info</span>
+                  <span class="font-medium text-sm">
+                    <span x-text="getViewsWithContent()"></span> of <span x-text="views.length"></span> views customized
+                  </span>
+                </div>
+              </div>
+
+              <!-- Quantity -->
+              <div class="pt-4">
+                <h3 class="text-sm font-bold uppercase tracking-wider text-[#637588] mb-3">Quantity</h3>
+                <div class="flex items-center gap-4">
+                  <button @click="quantity = Math.max(1, quantity - 1)"
+                          class="w-10 h-10 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <span class="material-symbols-outlined">remove</span>
+                  </button>
+                  <input type="number" x-model.number="quantity" min="1" max="100"
+                         class="w-20 text-center py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-transparent">
+                  <button @click="quantity = Math.min(100, quantity + 1)"
+                          class="w-10 h-10 rounded-lg border border-gray-200 dark:border-gray-600 flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+                    <span class="material-symbols-outlined">add</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Bulk Discount -->
+              <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+                <div class="flex items-center gap-2 text-green-700 dark:text-green-400">
+                  <span class="material-symbols-outlined">discount</span>
+                  <span class="font-medium text-sm">Order 10+ for 15% off!</span>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Sidebar Bottom Action -->
+        <div class="p-6 bg-[#f9fafb] dark:bg-[#0d1117] border-t border-[#e5e7eb] dark:border-[#2d3748]">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex flex-col">
+              <span class="text-sm font-medium text-[#637588]">Total (<span x-text="quantity"></span> item<span x-show="quantity > 1">s</span>)</span>
+              <span class="text-2xl font-black text-primary">$<span x-text="(totalPrice * quantity).toFixed(2)"></span></span>
+            </div>
+            <div class="flex flex-col items-end">
+              <span x-show="canAddToCart" class="text-[10px] font-bold text-green-500 uppercase tracking-wider">Ready to Print</span>
+              <span x-show="!canAddToCart" class="text-[10px] font-bold text-orange-500 uppercase tracking-wider">Add a design</span>
+              <span class="text-[10px] text-gray-400" x-text="getViewsWithContent() + '/' + views.length + ' views'"></span>
+            </div>
+          </div>
+          <button @click="addToCart()"
+                  :disabled="!canAddToCart"
+                  :class="canAddToCart ? 'bg-primary hover:shadow-primary/40' : 'bg-gray-300 cursor-not-allowed'"
+                  class="w-full py-4 text-white rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2">
+            <span class="material-symbols-outlined">shopping_bag</span>
+            <span x-text="canAddToCart ? 'Add to Cart' : 'Add a design first'"></span>
+          </button>
+        </div>
+      </aside>
+    </main>
+
+    <!-- Preview Both Sides Modal -->
+    <div x-show="showPreviewModal" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-6" @click.self="showPreviewModal = false">
+      <div class="bg-white dark:bg-[#1a202c] rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
+        <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+          <div>
+            <h3 class="text-lg font-bold">Preview Both Sides</h3>
+            <p class="text-sm text-gray-500" x-text="selectedSize + ' / ' + selectedColor.name + ' / ' + materials.find(m => m.value === selectedMaterial)?.label"></p>
+          </div>
+          <button @click="showPreviewModal = false" class="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="p-4 md:p-6 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+          <template x-for="view in views" :key="view.id">
+            <div class="flex flex-col">
+              <div class="flex items-center gap-2 mb-3">
+                <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold"
+                      :class="viewHasContent(view.id) ? 'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400' : 'bg-gray-100 dark:bg-gray-700 text-gray-400'">
+                  <span class="material-symbols-outlined text-sm" x-text="viewHasContent(view.id) ? 'check' : 'remove'"></span>
+                </span>
+                <span class="font-bold text-sm" x-text="view.label + ' Side'"></span>
+                <span x-show="viewHasContent(view.id)" class="text-xs text-green-500 font-medium">Customized</span>
+                <span x-show="!viewHasContent(view.id)" class="text-xs text-gray-400 font-medium">Empty</span>
+              </div>
+              <div class="relative bg-gray-50 dark:bg-gray-800 rounded-xl border-2 border-gray-200 dark:border-gray-700 overflow-hidden flex items-center justify-center h-[200px] sm:h-[320px]">
+                <svg viewBox="0 0 400 450" class="w-full h-full p-4">
+                  <defs>
+                    <clipPath :id="'prevClip_' + view.id">
+                      <path d="M 100,100 L 100,400 L 300,400 L 300,100 Z"/>
+                    </clipPath>
+                  </defs>
+                  <path class="tshirt-base" :fill="selectedColor.value" d="M 80,50 L 40,90 L 70,130 L 100,100 L 100,400 L 300,400 L 300,100 L 330,130 L 360,90 L 320,50 L 260,50 Q 200,80 140,50 Z"/>
+                  <!-- SVG clipped design -->
+                  <g :clip-path="'url(#prevClip_' + view.id + ')'">
+                    <image x-show="designs[view.id].image"
+                           :href="designs[view.id].image || ''"
+                           x="100" y="100" width="200" height="300"
+                           :preserveAspectRatio="(designs[view.id].fitMode || 'cover') === 'cover' ? 'xMidYMid slice' : 'xMidYMid meet'"
+                           :transform="getImageTransform(view.id)"
+                           style="pointer-events: none;"/>
+                  </g>
+                  <!-- Text container for preview modal (rendered via JS) -->
+                  <g :id="'previewTextGroup_' + view.id"></g>
+                  <path fill="none" :stroke="adjustColor(selectedColor.value, -20)" stroke-width="3" d="M 140,50 Q 200,85 260,50"/>
+                </svg>
+                <template x-if="!designs[view.id].image && textLayers[view.id].length === 0">
+                  <div class="absolute inset-0 flex items-center justify-center">
+                    <span class="text-xs text-gray-400">No design</span>
+                  </div>
+                </template>
+                <!-- Side label badge -->
+                <div class="absolute top-3 left-3 px-2 py-1 bg-white/80 dark:bg-gray-700/80 rounded-md text-[10px] font-bold uppercase tracking-wider" x-text="view.label"></div>
+              </div>
+            </div>
+          </template>
+        </div>
+        <div class="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 rounded-b-2xl flex items-center justify-between">
+          <div>
+            <span class="text-sm text-gray-500" x-text="getViewsWithContent() + ' of ' + views.length + ' sides customized'"></span>
+            <div class="text-xl font-black text-primary">$<span x-text="(totalPrice * quantity).toFixed(2)"></span></div>
+          </div>
+          <div class="flex gap-3">
+            <button @click="showPreviewModal = false" class="px-5 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 text-sm font-bold hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Close</button>
+            <button @click="showPreviewModal = false; addToCart()" :disabled="!canAddToCart"
+                    :class="canAddToCart ? 'bg-primary hover:bg-primary/90' : 'bg-gray-300 cursor-not-allowed'"
+                    class="px-5 py-2.5 rounded-lg text-white text-sm font-bold flex items-center gap-2 transition-colors">
+              <span class="material-symbols-outlined text-lg">shopping_bag</span>Add to Cart
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-white dark:bg-[#1a202c] border-t border-gray-200 dark:border-gray-700 px-6 py-2 flex items-center justify-between text-[11px] font-medium text-gray-400 uppercase tracking-widest">
+      <div class="flex gap-4 items-center">
+        <span x-text="selectedSize"></span>
+        <span>/</span>
+        <span x-text="selectedColor.name"></span>
+        <span>/</span>
+        <span x-text="materials.find(m => m.value === selectedMaterial)?.label"></span>
+        <span>/</span>
+        <span x-text="getViewsWithContent() + ' print(s)'"></span>
+      </div>
+      <div class="flex gap-4 items-center">
+        <span class="flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">local_laundry_service</span>
+          Machine Washable
+        </span>
+        <span class="flex items-center gap-1">
+          <span class="material-symbols-outlined text-sm">verified</span>
+          Premium Quality
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function tshirtDesigner() {
+      return {
+        // Initialization
+        init() {
+          // Watch for view changes and re-render text
+          this.$watch('currentView', () => {
+            this.$nextTick(() => this.renderTextLayers());
+          });
+
+          // Re-render text on window resize (positions depend on SVG size)
+          window.addEventListener('resize', () => this.renderTextLayers());
+
+          // Initial render
+          setTimeout(() => this.renderTextLayers(), 100);
+        },
+
+        // UI State
+        activeTab: 'edit',
+        isDragging: false,
+        showToast: false,
+        toastMessage: '',
+        showPreviewModal: false,
+        currentView: 'front',
+        zoomLevel: 0.85,
+        showDesignZone: true,
+        textInput: '',
+
+        // Views configuration
+        views: [
+          { id: 'front', label: 'Front' },
+          { id: 'back', label: 'Back' }
+        ],
+
+        // Per-view designs (image + transform properties)
+        designs: {
+          front: { image: null, scalePercent: 100, rotation: 0, flipH: false, flipV: false, fitMode: 'cover', posX: 0.5, posY: 0.5 },
+          back: { image: null, scalePercent: 100, rotation: 0, flipH: false, flipV: false, fitMode: 'cover', posX: 0.5, posY: 0.5 }
+        },
+
+        // Multi-layer text per view
+        textLayers: {
+          front: [],
+          back: []
+        },
+        selectedTextId: null,
+
+        // T-Shirt Options
+        selectedColor: { name: 'White', value: '#ffffff' },
+        selectedSize: 'M',
+        selectedMaterial: 'cotton',
+
+        // Cart
+        quantity: 1,
+        basePrice: 19.99,
+
+        // Options Data
+        tshirtColors: [
+          { name: 'White', value: '#ffffff' },
+          { name: 'Black', value: '#1a1a1a' },
+          { name: 'Navy', value: '#1e3a5f' },
+          { name: 'Red', value: '#dc2626' },
+          { name: 'Royal Blue', value: '#2563eb' },
+          { name: 'Forest Green', value: '#166534' },
+          { name: 'Gray', value: '#6b7280' },
+          { name: 'Yellow', value: '#eab308' },
+        ],
+
+        sizes: ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL'],
+
+        materials: [
+          { value: 'cotton', label: '100% Cotton', description: 'Soft and breathable', price: 0 },
+          { value: 'polyester', label: 'Polyester Blend', description: 'Moisture-wicking', price: 3 },
+          { value: 'organic', label: 'Organic Cotton', description: 'Eco-friendly', price: 5 },
+          { value: 'premium', label: 'Premium Tri-Blend', description: 'Ultra soft feel', price: 8 },
+        ],
+
+        fonts: ['Inter', 'Arial', 'Georgia', 'Courier New', 'Impact', 'Comic Sans MS'],
+
+        textColors: ['#000000', '#ffffff', '#dc2626', '#2563eb', '#16a34a', '#eab308', '#9333ea', '#ec4899'],
+
+        // Methods
+        viewHasContent(viewId) {
+          return this.designs[viewId].image || this.textLayers[viewId].length > 0;
+        },
+
+        getViewsWithContent() {
+          return this.views.filter(v => this.viewHasContent(v.id)).length;
+        },
+
+        get canAddToCart() {
+          return this.views.some(v => this.viewHasContent(v.id));
+        },
+
+        get totalPrice() {
+          let total = this.basePrice;
+          total += this.getMaterialPrice();
+          // $5 per view with design
+          total += this.getViewsWithContent() * 5.00;
+          if (this.selectedColor.value !== '#ffffff') total += 2.00;
+          // Bulk discount
+          if (this.quantity >= 10) total *= 0.85;
+          return total;
+        },
+
+        getMaterialPrice() {
+          const material = this.materials.find(m => m.value === this.selectedMaterial);
+          return material ? material.price : 0;
+        },
+
+        handleFileUpload(event) {
+          const file = event.target.files[0];
+          if (file) this.processFile(file);
+        },
+
+        handleDrop(event) {
+          this.isDragging = false;
+          const file = event.dataTransfer.files[0];
+          if (file) this.processFile(file);
+        },
+
+        processFile(file) {
+          if (!file.type.match('image.*') && file.type !== 'application/pdf') {
+            alert('Please upload an image file (PNG, JPG) or PDF');
+            return;
+          }
+          if (file.size > 10 * 1024 * 1024) {
+            alert('File size must be less than 10MB');
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            // Load the image first to get dimensions
+            const img = new Image();
+            img.onload = () => {
+              // Calculate optimal scale to fit within safe zone
+              const printAreaW = 200; // SVG print area width
+              const printAreaH = 300; // SVG print area height
+              const imgRatio = img.width / img.height;
+              const areaRatio = printAreaW / printAreaH;
+
+              let optimalScale = 100;
+
+              // Check if image needs to be scaled down to fit
+              if (this.designs[this.currentView].fitMode === 'contain') {
+                // For contain mode, ensure entire image fits
+                if (imgRatio > areaRatio) {
+                  // Image is wider - fit to width
+                  optimalScale = 90; // 90% to leave some margin
+                } else {
+                  // Image is taller - fit to height
+                  optimalScale = 90;
+                }
+              } else {
+                // For cover mode, ensure area is filled but not too large
+                optimalScale = 100;
+              }
+
+              // Set the image with optimal scale
+              this.designs[this.currentView].image = e.target.result;
+              this.designs[this.currentView].scalePercent = optimalScale;
+              this.designs[this.currentView].posX = 0.5; // Center
+              this.designs[this.currentView].posY = 0.5; // Center
+              this.designs[this.currentView].rotation = 0;
+              this.designs[this.currentView].flipH = false;
+              this.designs[this.currentView].flipV = false;
+
+              // Show notification
+              this.showNotification('Image uploaded and auto-fitted to safe zone');
+            };
+            img.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        },
+
+        // Multi-layer text management
+        addTextLayer() {
+          if (!this.textInput.trim()) return;
+
+          if (this.textLayers[this.currentView].length >= 5) {
+            alert('Maximum 5 text layers allowed per view');
+            return;
+          }
+
+          const layerId = 'text_' + Date.now();
+          const newLayer = {
+            id: layerId,
+            content: this.textInput.trim(),
+            posX: 0.5,
+            posY: 0.3 + this.textLayers[this.currentView].length * 0.2,
+            fontSize: 28,
+            fontFamily: 'Arial',
+            color: '#000000',
+            bold: false,
+            italic: false,
+            rotation: 0,
+            stroke: false,
+            strokeColor: '#000000',
+            visible: true
+          };
+
+          this.textLayers[this.currentView].push(newLayer);
+          this.selectedTextId = layerId;
+          this.textInput = '';
+          this.renderTextLayers();
+          this.showNotification('Text added: ' + newLayer.content);
+        },
+
+        renderTextLayers() {
+          const overlay = document.getElementById('textOverlay');
+          const svg = document.getElementById('mainSvg');
+          if (!overlay || !svg) return;
+
+          // Clear existing text elements
+          overlay.innerHTML = '';
+
+          const layers = this.textLayers[this.currentView];
+          if (!layers || layers.length === 0) return;
+
+          // Use clientWidth/clientHeight (pre-transform) since overlay is inside the same transform
+          const svgStyle = getComputedStyle(svg);
+          const padTop = parseFloat(svgStyle.paddingTop) || 0;
+          const padLeft = parseFloat(svgStyle.paddingLeft) || 0;
+          const padRight = parseFloat(svgStyle.paddingRight) || 0;
+          const padBottom = parseFloat(svgStyle.paddingBottom) || 0;
+
+          const innerW = svg.clientWidth - padLeft - padRight;
+          const innerH = svg.clientHeight - padTop - padBottom;
+
+          // SVG viewBox 400x450, print area 100,100 -> 300,400 (200x300)
+          const viewBoxW = 400, viewBoxH = 450;
+          const printX = 100, printY = 100, printW = 200, printH = 300;
+
+          // Calculate scale (preserveAspectRatio xMidYMid meet)
+          const svgAR = viewBoxW / viewBoxH;
+          const containerAR = innerW / innerH;
+          let scale, offsetX, offsetY;
+          if (containerAR > svgAR) {
+            scale = innerH / viewBoxH;
+            offsetX = padLeft + (innerW - viewBoxW * scale) / 2;
+            offsetY = padTop;
+          } else {
+            scale = innerW / viewBoxW;
+            offsetX = padLeft;
+            offsetY = padTop + (innerH - viewBoxH * scale) / 2;
+          }
+
+          // Print area in pixel coordinates relative to SVG element
+          const printLeft = offsetX + printX * scale;
+          const printTop = offsetY + printY * scale;
+          const printWidth = printW * scale;
+          const printHeight = printH * scale;
+
+          layers.forEach(layer => {
+            if (!layer.visible) return;
+
+            const posX = layer.posX || 0.5;
+            const posY = layer.posY || 0.5;
+
+            // Position in pixels from container top-left
+            const x = printLeft + posX * printWidth;
+            const y = printTop + posY * printHeight;
+
+            // Scale font size relative to print area
+            const fontSize = (layer.fontSize || 28) * scale;
+
+            const div = document.createElement('div');
+            div.dataset.layerId = layer.id;
+            div.textContent = layer.content;
+            div.style.cssText = `
+              position: absolute;
+              left: ${x}px;
+              top: ${y}px;
+              transform: translate(-50%, -50%) rotate(${layer.rotation || 0}deg);
+              font-size: ${fontSize}px;
+              font-family: ${layer.fontFamily || 'Arial'}, sans-serif;
+              font-weight: ${layer.bold ? 'bold' : 'normal'};
+              font-style: ${layer.italic ? 'italic' : 'normal'};
+              color: ${layer.color || '#000000'};
+              white-space: nowrap;
+              pointer-events: auto;
+              cursor: move;
+              user-select: none;
+              line-height: 1.2;
+              ${layer.stroke ? `-webkit-text-stroke: ${Math.max(1, fontSize / 20)}px ${layer.strokeColor || '#000'};` : ''}
+            `;
+
+            // Selected indicator
+            if (this.selectedTextId === layer.id) {
+              div.style.outline = '2px dashed #308ce8';
+              div.style.outlineOffset = '3px';
+            }
+
+            // Drag and click events
+            div.addEventListener('mousedown', (e) => this.startTextDrag(e, layer.id));
+            div.addEventListener('touchstart', (e) => this.startTextDrag(e, layer.id));
+            div.addEventListener('click', (e) => {
+              e.stopPropagation();
+              this.selectedTextId = layer.id;
+              this.renderTextLayers();
+            });
+
+            overlay.appendChild(div);
+          });
+        },
+
+        deleteTextLayer(id) {
+          this.textLayers[this.currentView] = this.textLayers[this.currentView].filter(l => l.id !== id);
+          if (this.selectedTextId === id) this.selectedTextId = null;
+          this.renderTextLayers();
+        },
+
+        getSelectedText() {
+          if (!this.selectedTextId) return null;
+          return this.textLayers[this.currentView]?.find(l => l.id === this.selectedTextId) || null;
+        },
+
+        setTextPos(posX, posY) {
+          const t = this.getSelectedText();
+          if (t) {
+            t.posX = posX;
+            t.posY = posY;
+            this.renderTextLayers();
+          }
+        },
+
+        // Text drag functionality (HTML overlay based)
+        startTextDrag(event, layerId) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          this.isDraggingText = true;
+          this.draggedTextId = layerId;
+          this.selectedTextId = layerId;
+
+          let clientX, clientY;
+          if (event.type.includes('touch')) {
+            clientX = event.touches[0].clientX;
+            clientY = event.touches[0].clientY;
+          } else {
+            clientX = event.clientX;
+            clientY = event.clientY;
+          }
+
+          this.dragStartPos = { x: clientX, y: clientY };
+
+          const layer = this.textLayers[this.currentView].find(l => l.id === layerId);
+          if (layer) {
+            this.dragStartTextPos = {
+              x: layer.posX || 0.5,
+              y: layer.posY || 0.5
+            };
+          }
+
+          const handleMove = (e) => this.handleTextDrag(e);
+          const handleEnd = (e) => this.endTextDrag(e);
+
+          if (event.type.includes('touch')) {
+            document.addEventListener('touchmove', handleMove, { passive: false });
+            document.addEventListener('touchend', handleEnd, { passive: false });
+          } else {
+            document.addEventListener('mousemove', handleMove);
+            document.addEventListener('mouseup', handleEnd);
+          }
+
+          this._textDragCleanup = () => {
+            document.removeEventListener('mousemove', handleMove);
+            document.removeEventListener('mouseup', handleEnd);
+            document.removeEventListener('touchmove', handleMove);
+            document.removeEventListener('touchend', handleEnd);
+          };
+        },
+
+        handleTextDrag(event) {
+          if (!this.isDraggingText || !this.draggedTextId) return;
+          event.preventDefault();
+
+          let clientX, clientY;
+          if (event.type.includes('touch')) {
+            clientX = event.touches[0].clientX;
+            clientY = event.touches[0].clientY;
+          } else {
+            clientX = event.clientX;
+            clientY = event.clientY;
+          }
+
+          // Calculate print area pixel size for proper drag scaling
+          const svg = document.getElementById('mainSvg');
+          if (!svg) return;
+          const svgRect = svg.getBoundingClientRect();
+          const svgStyle = getComputedStyle(svg);
+          const padL = parseFloat(svgStyle.paddingLeft) || 0;
+          const padR = parseFloat(svgStyle.paddingRight) || 0;
+          const padT = parseFloat(svgStyle.paddingTop) || 0;
+          const padB = parseFloat(svgStyle.paddingBottom) || 0;
+          const innerW = svgRect.width - padL - padR;
+          const innerH = svgRect.height - padT - padB;
+          const svgAR = 400 / 450;
+          const cAR = innerW / innerH;
+          const scale = cAR > svgAR ? innerH / 450 : innerW / 400;
+          const printWidth = 200 * scale;
+          const printHeight = 300 * scale;
+
+          const deltaX = clientX - this.dragStartPos.x;
+          const deltaY = clientY - this.dragStartPos.y;
+          const deltaPosX = deltaX / printWidth;
+          const deltaPosY = deltaY / printHeight;
+
+          const layer = this.textLayers[this.currentView].find(l => l.id === this.draggedTextId);
+          if (layer) {
+            layer.posX = Math.max(0, Math.min(1, this.dragStartTextPos.x + deltaPosX));
+            layer.posY = Math.max(0, Math.min(1, this.dragStartTextPos.y + deltaPosY));
+            this.renderTextLayers();
+          }
+        },
+
+        endTextDrag(event) {
+          this.isDraggingText = false;
+          this.draggedTextId = null;
+          if (this._textDragCleanup) {
+            this._textDragCleanup();
+            this._textDragCleanup = null;
+          }
+        },
+
+        // Render text into preview modal SVGs using createElementNS (Alpine x-text fails in SVG)
+        renderPreviewText() {
+          const svgNS = 'http://www.w3.org/2000/svg';
+          this.views.forEach(view => {
+            const group = document.getElementById('previewTextGroup_' + view.id);
+            if (!group) return;
+            // Clear previous
+            while (group.firstChild) group.removeChild(group.firstChild);
+
+            const layers = this.textLayers[view.id];
+            if (!layers || layers.length === 0) return;
+
+            layers.forEach(layer => {
+              if (!layer.visible) return;
+              const textEl = document.createElementNS(svgNS, 'text');
+              const x = 100 + (layer.posX || 0.5) * 200;
+              const y = 100 + (layer.posY || 0.5) * 300;
+              textEl.setAttribute('x', x);
+              textEl.setAttribute('y', y);
+              textEl.setAttribute('fill', layer.color || '#000000');
+              textEl.setAttribute('font-size', layer.fontSize || 28);
+              textEl.setAttribute('font-family', (layer.fontFamily || 'Arial') + ', sans-serif');
+              textEl.setAttribute('font-weight', layer.bold ? 'bold' : 'normal');
+              textEl.setAttribute('font-style', layer.italic ? 'italic' : 'normal');
+              textEl.setAttribute('text-anchor', 'middle');
+              textEl.setAttribute('dominant-baseline', 'middle');
+              if (layer.rotation) {
+                textEl.setAttribute('transform', `rotate(${layer.rotation}, ${x}, ${y})`);
+              }
+              if (layer.stroke) {
+                textEl.setAttribute('stroke', layer.strokeColor || '#000');
+                textEl.setAttribute('stroke-width', Math.max(1, (layer.fontSize || 28) / 20));
+                textEl.setAttribute('stroke-linejoin', 'round');
+                textEl.setAttribute('paint-order', 'stroke fill');
+              }
+              textEl.textContent = layer.content;
+              group.appendChild(textEl);
+            });
+          });
+        },
+
+        resetDesign() {
+          this.views.forEach(view => {
+            this.designs[view.id] = { image: null, scalePercent: 100, rotation: 0, flipH: false, flipV: false, fitMode: 'cover', posX: 0.5, posY: 0.5 };
+            this.textLayers[view.id] = [];
+          });
+          this.textInput = '';
+          this.selectedTextId = null;
+          this.selectedColor = { name: 'White', value: '#ffffff' };
+          this.selectedSize = 'M';
+          this.selectedMaterial = 'cotton';
+          this.quantity = 1;
+          this.zoomLevel = 0.85;
+          this.currentView = 'front';
+        },
+
+        adjustColor(hex, percent) {
+          const num = parseInt(hex.replace('#', ''), 16);
+          const amt = Math.round(2.55 * percent);
+          const R = Math.max(0, Math.min(255, (num >> 16) + amt));
+          const G = Math.max(0, Math.min(255, ((num >> 8) & 0x00FF) + amt));
+          const B = Math.max(0, Math.min(255, (num & 0x0000FF) + amt));
+          return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
+        },
+
+        // Image dragging state
+        isDraggingImage: false,
+        dragStartPos: { x: 0, y: 0 },
+        dragStartDesignPos: { x: 0.5, y: 0.5 },
+        _dragCleanup: null,
+
+        // Text dragging state
+        isDraggingText: false,
+        draggedTextId: null,
+        dragStartTextPos: { x: 0.5, y: 0.5 },
+        _textDragCleanup: null,
+
+        // SVG image transform helper
+        updateSvgImage() {
+          // Alpine reactivity handles SVG attribute updates automatically
+        },
+
+        getImageTransform(viewId) {
+          const d = this.designs[viewId];
+          const scale = (d.scalePercent || 100) / 100;
+          const rotation = d.rotation || 0;
+          const sx = (d.flipH ? -1 : 1) * scale;
+          const sy = (d.flipV ? -1 : 1) * scale;
+          const posX = d.posX || 0.5;
+          const posY = d.posY || 0.5;
+
+          // Center of print area: (100+200/2, 100+300/2) = (200, 250)
+          const origCx = 200, origCy = 250;
+
+          // Calculate the target position based on the position offsets (relative to center)
+          const targetCx = origCx + (posX - 0.5) * 200;  // -0.5 to 0.5 becomes -100 to 100
+          const targetCy = origCy + (posY - 0.5) * 300;  // -0.5 to 0.5 becomes -150 to 150
+
+          // Apply all transformations in order: position -> scale/rotation/flip -> back to original center
+          let transform = `translate(${targetCx - origCx}, ${targetCy - origCy})`; // Position offset
+
+          if (scale !== 1 || rotation !== 0 || d.flipH || d.flipV) {
+            transform += ` translate(${origCx}, ${origCy}) scale(${sx}, ${sy}) rotate(${rotation}) translate(${-origCx}, ${-origCy})`;
+          }
+
+          return transform;
+        },
+
+        startImageDrag(event) {
+          if (!this.designs[this.currentView].image) return;
+
+          event.preventDefault();
+          event.stopPropagation();
+          this.isDraggingImage = true;
+
+          // Get mouse/touch position
+          let clientX, clientY;
+          if (event.type.includes('touch')) {
+            clientX = event.touches[0].clientX;
+            clientY = event.touches[0].clientY;
+          } else {
+            clientX = event.clientX;
+            clientY = event.clientY;
+          }
+
+          // Get SVG element and its bounding box
+          const svg = event.currentTarget.closest('svg');
+          const rect = svg.getBoundingClientRect();
+          const viewBox = svg.viewBox.baseVal;
+
+          // Calculate scale factor between screen pixels and SVG coordinates
+          const scaleX = viewBox.width / rect.width;
+          const scaleY = viewBox.height / rect.height;
+
+          // Store initial mouse position in SVG coordinates
+          this.dragStartPos = {
+            x: (clientX - rect.left) * scaleX,
+            y: (clientY - rect.top) * scaleY
+          };
+
+          // Store the current design position
+          this.dragStartDesignPos = {
+            x: this.designs[this.currentView].posX || 0.5,
+            y: this.designs[this.currentView].posY || 0.5
+          };
+
+          // Add event listeners for dragging
+          const handleMouseMove = (e) => this.handleImageDrag(e, svg, rect, scaleX, scaleY);
+          const handleMouseUp = (e) => this.endImageDrag(e);
+
+          if (event.type.includes('touch')) {
+            document.addEventListener('touchmove', handleMouseMove, { passive: false });
+            document.addEventListener('touchend', handleMouseUp, { passive: false });
+          } else {
+            document.addEventListener('mousemove', handleMouseMove);
+            document.addEventListener('mouseup', handleMouseUp);
+          }
+
+          // Store cleanup function
+          this._dragCleanup = () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            document.removeEventListener('touchmove', handleMouseMove);
+            document.removeEventListener('touchend', handleMouseUp);
+          };
+        },
+
+        handleImageDrag(event, svg, rect, scaleX, scaleY) {
+          if (!this.isDraggingImage) return;
+
+          event.preventDefault();
+          let clientX, clientY;
+          if (event.type.includes('touch')) {
+            clientX = event.touches[0].clientX;
+            clientY = event.touches[0].clientY;
+          } else {
+            clientX = event.clientX;
+            clientY = event.clientY;
+          }
+
+          // Calculate current mouse position in SVG coordinates
+          const currentSvgX = (clientX - rect.left) * scaleX;
+          const currentSvgY = (clientY - rect.top) * scaleY;
+
+          // Calculate how much we've moved in SVG coordinates
+          const deltaX = currentSvgX - this.dragStartPos.x;
+          const deltaY = currentSvgY - this.dragStartPos.y;
+
+          // Print area is 200x300 in SVG coordinates
+          const printAreaWidth = 200;
+          const printAreaHeight = 300;
+
+          // Convert SVG pixel movement to normalized position change (0-1 range)
+          const deltaPosX = deltaX / printAreaWidth;
+          const deltaPosY = deltaY / printAreaHeight;
+
+          // Update position with bounds checking
+          const d = this.designs[this.currentView];
+          const newPosX = Math.max(0, Math.min(1, this.dragStartDesignPos.x + deltaPosX));
+          const newPosY = Math.max(0, Math.min(1, this.dragStartDesignPos.y + deltaPosY));
+
+          d.posX = newPosX;
+          d.posY = newPosY;
+        },
+
+        endImageDrag(event) {
+          this.isDraggingImage = false;
+          if (this._dragCleanup) {
+            this._dragCleanup();
+            this._dragCleanup = null;
+          }
+        },
+
+        fitToSafeZone() {
+          const d = this.designs[this.currentView];
+          if (!d.image) return;
+
+          // Reset to safe defaults
+          d.scalePercent = 90; // Safe scale that won't crop
+          d.posX = 0.5; // Center X
+          d.posY = 0.5; // Center Y
+          d.rotation = 0;
+          d.fitMode = 'contain'; // Ensure entire image is visible
+
+          this.showNotification('Image fitted to safe zone');
+        },
+
+        // Export methods
+        exportAs(format, viewOption) {
+          const view = viewOption || this.currentView;
+
+          if (view === 'both') {
+            this._exportBothSides(format);
+          } else {
+            this._exportSingleView(format, view);
+          }
+        },
+
+        _exportSingleView(format, view) {
+          const canvas = document.createElement('canvas');
+          const dpi = 300;
+          // T-shirt print area: 10" x 15" at 300 DPI
+          const printW = 10, printH = 15;
+          canvas.width = Math.round(printW * dpi);
+          canvas.height = Math.round(printH * dpi);
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          const design = this.designs[view];
+
+          if (design.image) {
+            const img = new Image();
+            img.onload = () => {
+              this._drawImageToCanvas(ctx, img, design, canvas.width, canvas.height);
+              this._drawTextToCanvas(ctx, view, canvas.width, canvas.height);
+              this._finishExport(canvas, format, view);
+            };
+            img.src = design.image;
+          } else {
+            this._drawTextToCanvas(ctx, view, canvas.width, canvas.height);
+            this._finishExport(canvas, format, view);
+          }
+        },
+
+        _exportBothSides(format) {
+          const canvas = document.createElement('canvas');
+          const dpi = 300;
+          // Each side: 10" x 15", combined side-by-side: 20" x 15"
+          const singleW = 10, singleH = 15;
+          const totalW = singleW * 2;
+          canvas.width = Math.round(totalW * dpi);
+          canvas.height = Math.round(singleH * dpi);
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          const sideWidth = Math.round(singleW * dpi);
+          const sideHeight = Math.round(singleH * dpi);
+
+          // Counter for loaded images
+          let loadedImages = 0;
+          const totalImages = (this.designs.front.image ? 1 : 0) + (this.designs.back.image ? 1 : 0);
+
+          const checkComplete = () => {
+            loadedImages++;
+            if (totalImages === 0 || loadedImages >= totalImages) {
+              // Draw text layers for both sides
+              this._drawBothSidesText(ctx, sideWidth, sideHeight);
+              // Add labels
+              this._addBothSidesLabels(ctx, sideWidth, sideHeight);
+              this._finishExport(canvas, format, 'both');
+            }
+          };
+
+          // Draw Front Side (left)
+          if (this.designs.front.image) {
+            const imgFront = new Image();
+            imgFront.onload = () => {
+              // Create a temporary canvas for the front side
+              const tempCanvas = document.createElement('canvas');
+              tempCanvas.width = sideWidth;
+              tempCanvas.height = sideHeight;
+              const tempCtx = tempCanvas.getContext('2d');
+              tempCtx.fillStyle = '#ffffff';
+              tempCtx.fillRect(0, 0, sideWidth, sideHeight);
+
+              // Draw to temp canvas
+              this._drawImageToCanvas(tempCtx, imgFront, this.designs.front, sideWidth, sideHeight);
+
+              // Copy to main canvas at position 0,0
+              ctx.drawImage(tempCanvas, 0, 0);
+              checkComplete();
+            };
+            imgFront.src = this.designs.front.image;
+          }
+
+          // Draw Back Side (right)
+          if (this.designs.back.image) {
+            const imgBack = new Image();
+            imgBack.onload = () => {
+              // Create a temporary canvas for the back side
+              const tempCanvas = document.createElement('canvas');
+              tempCanvas.width = sideWidth;
+              tempCanvas.height = sideHeight;
+              const tempCtx = tempCanvas.getContext('2d');
+              tempCtx.fillStyle = '#ffffff';
+              tempCtx.fillRect(0, 0, sideWidth, sideHeight);
+
+              // Draw to temp canvas
+              this._drawImageToCanvas(tempCtx, imgBack, this.designs.back, sideWidth, sideHeight);
+
+              // Copy to main canvas at position sideWidth,0
+              ctx.drawImage(tempCanvas, sideWidth, 0);
+              checkComplete();
+            };
+            imgBack.src = this.designs.back.image;
+          }
+
+          // If no images, just draw text and complete
+          if (totalImages === 0) {
+            this._drawBothSidesText(ctx, sideWidth, sideHeight);
+            this._addBothSidesLabels(ctx, sideWidth, sideHeight);
+            this._finishExport(canvas, format, 'both');
+          }
+        },
+
+        _drawBothSidesText(ctx, sideWidth, sideHeight) {
+          // Draw front text on temporary canvas
+          const frontTextCanvas = document.createElement('canvas');
+          frontTextCanvas.width = sideWidth;
+          frontTextCanvas.height = sideHeight;
+          const frontTextCtx = frontTextCanvas.getContext('2d');
+          this._drawTextToCanvas(frontTextCtx, 'front', sideWidth, sideHeight);
+          ctx.drawImage(frontTextCanvas, 0, 0);
+
+          // Draw back text on temporary canvas
+          const backTextCanvas = document.createElement('canvas');
+          backTextCanvas.width = sideWidth;
+          backTextCanvas.height = sideHeight;
+          const backTextCtx = backTextCanvas.getContext('2d');
+          this._drawTextToCanvas(backTextCtx, 'back', sideWidth, sideHeight);
+          ctx.drawImage(backTextCanvas, sideWidth, 0);
+        },
+
+        _addBothSidesLabels(ctx, sideWidth, sideHeight) {
+          const dpi = 300;
+          ctx.save();
+          ctx.font = `bold ${Math.round(24 * dpi / 96)}px Inter`;
+          ctx.textAlign = 'center';
+
+          // Front label
+          ctx.fillStyle = 'rgba(0,0,0,0.15)';
+          ctx.fillText('FRONT', sideWidth / 2, 60);
+
+          // Back label
+          ctx.fillText('BACK', sideWidth + sideWidth / 2, 60);
+
+          // Divider line
+          ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+          ctx.lineWidth = 2;
+          ctx.setLineDash([20, 10]);
+          ctx.beginPath();
+          ctx.moveTo(sideWidth, 0);
+          ctx.lineTo(sideWidth, sideHeight);
+          ctx.stroke();
+
+          ctx.restore();
+        },
+
+        _drawImageToCanvas(ctx, img, design, cw, ch) {
+          const scale = (design.scalePercent || 100) / 100;
+          const rotation = (design.rotation || 0) * Math.PI / 180;
+          const flipH = design.flipH || false;
+          const flipV = design.flipV || false;
+          const fitMode = design.fitMode || 'cover';
+          const posX = design.posX || 0.5;
+          const posY = design.posY || 0.5;
+
+          ctx.save();
+
+          // Center of canvas
+          const centerX = cw / 2;
+          const centerY = ch / 2;
+
+          // Calculate image dimensions based on fit mode FIRST
+          const imgRatio = img.width / img.height;
+          const canvasRatio = cw / ch;
+          let baseW, baseH;
+
+          if (fitMode === 'cover') {
+            // Cover mode: fill the entire area, may crop
+            if (imgRatio > canvasRatio) {
+              baseH = ch;
+              baseW = baseH * imgRatio;
+            } else {
+              baseW = cw;
+              baseH = baseW / imgRatio;
+            }
+          } else {
+            // Contain mode: fit entirely within area, may have borders
+            if (imgRatio > canvasRatio) {
+              baseW = cw;
+              baseH = baseW / imgRatio;
+            } else {
+              baseH = ch;
+              baseW = baseH * imgRatio;
+            }
+          }
+
+          // Apply scale to dimensions
+          const finalW = baseW * scale;
+          const finalH = baseH * scale;
+
+          // Calculate position offset (keeping it simple - no arbitrary 0.8 factor)
+          // posX/posY range from 0 to 1, where 0.5 is center
+          // We want the image to move within the canvas bounds
+          const maxOffsetX = (finalW - cw) / 2;  // How much we can move before going off canvas
+          const maxOffsetY = (finalH - ch) / 2;
+
+          const offsetX = (posX - 0.5) * Math.min(maxOffsetX * 2, cw * 0.4);  // Limit movement
+          const offsetY = (posY - 0.5) * Math.min(maxOffsetY * 2, ch * 0.4);
+
+          // Move to the target position
+          ctx.translate(centerX + offsetX, centerY + offsetY);
+
+          // Apply rotation
+          ctx.rotate(rotation);
+
+          // Apply flip
+          const sx = flipH ? -1 : 1;
+          const sy = flipV ? -1 : 1;
+          ctx.scale(sx, sy);
+
+          // Draw the image centered at the current transformation point
+          ctx.drawImage(img, -finalW / 2, -finalH / 2, finalW, finalH);
+
+          ctx.restore();
+
+          // Add curvature effect AFTER restoring (so it covers the whole canvas)
+          this._addCurvatureEffect(ctx, cw, ch);
+        },
+
+        _addCurvatureEffect(ctx, cw, ch) {
+          // Create a gradient that mimics the SVG curvature effect
+          const gradient = ctx.createLinearGradient(0, 0, cw, 0);
+          gradient.addColorStop(0, 'rgba(255,255,255,0.15)');
+          gradient.addColorStop(0.35, 'rgba(255,255,255,0)');
+          gradient.addColorStop(0.65, 'rgba(0,0,0,0)');
+          gradient.addColorStop(1, 'rgba(0,0,0,0.10)');
+
+          ctx.save();
+          // Draw the gradient over the image area
+          ctx.globalCompositeOperation = 'overlay';
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, cw, ch);
+          ctx.restore();
+        },
+
+        _drawTextToCanvas(ctx, viewId, cw, ch) {
+          const layers = this.textLayers[viewId];
+          if (!layers || layers.length === 0) return;
+
+          layers.forEach(layer => {
+            if (!layer.visible) return;
+            const x = (layer.posX || 0.5) * cw;
+            const y = (layer.posY || 0.5) * ch;
+            const fontSize = Math.round((layer.fontSize || 28) * (cw / 200));
+            const rotation = (layer.rotation || 0) * Math.PI / 180;
+
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(rotation);
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const weight = layer.bold ? 'bold' : 'normal';
+            const style = layer.italic ? 'italic' : 'normal';
+            ctx.font = `${style} ${weight} ${fontSize}px ${layer.fontFamily || 'Arial'}, sans-serif`;
+
+            if (layer.stroke) {
+              ctx.strokeStyle = layer.strokeColor || '#000000';
+              ctx.lineWidth = Math.max(2, fontSize / 8);
+              ctx.lineJoin = 'round';
+              ctx.strokeText(layer.content, 0, 0);
+            }
+
+            ctx.fillStyle = layer.color || '#000000';
+            ctx.fillText(layer.content, 0, 0);
+            ctx.restore();
+          });
+        },
+
+        _finishExport(canvas, format, view) {
+          const label = view === 'both' ? 'Front + Back' : view.charAt(0).toUpperCase() + view.slice(1);
+          if (format === 'png') {
+            const a = document.createElement('a');
+            a.download = `tshirt-${view}-${Date.now()}.png`;
+            a.href = canvas.toDataURL('image/png');
+            a.click();
+            this.showNotification(`${label} PNG exported at 300 DPI`);
+          } else if (format === 'jpeg') {
+            const a = document.createElement('a');
+            a.download = `tshirt-${view}-${Date.now()}.jpg`;
+            a.href = canvas.toDataURL('image/jpeg', 0.95);
+            a.click();
+            this.showNotification(`${label} JPEG exported at 300 DPI`);
+          } else if (format === 'pdf') {
+            this._exportPDF(canvas, view);
+          }
+        },
+
+        _exportPDF(canvas, view) {
+          if (typeof window.jspdf === 'undefined' && typeof jspdf === 'undefined') {
+            this.showNotification('PDF library loading, please wait...');
+            setTimeout(() => this._exportPDF(canvas, view), 1000);
+            return;
+          }
+          const { jsPDF } = window.jspdf || jspdf;
+
+          let pdf, pdfWidth, pdfHeight, orientation;
+          if (view === 'both') {
+            // 20" x 15" landscape page for both sides
+            orientation = 'landscape';
+            pdfWidth = 20;
+            pdfHeight = 15;
+            pdf = new jsPDF({ orientation, unit: 'in', format: [pdfWidth, pdfHeight] });
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+            // Add labels
+            pdf.setFontSize(10);
+            pdf.setTextColor(100);
+            pdf.text('FRONT Print Area (10" x 15")', 5, 14.7, { align: 'center' });
+            pdf.text('BACK Print Area (10" x 15")', 15, 14.7, { align: 'center' });
+          } else {
+            // 10" x 15" portrait page for single view
+            orientation = 'portrait';
+            pdfWidth = 10;
+            pdfHeight = 15;
+            pdf = new jsPDF({ orientation, unit: 'in', format: [pdfWidth, pdfHeight] });
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfWidth, pdfHeight);
+            // Add label
+            pdf.setFontSize(8);
+            pdf.setTextColor(180);
+            const label = view.charAt(0).toUpperCase() + view.slice(1);
+            pdf.text(`${label} Print Area (10" x 15")`, 5, 14.85, { align: 'center' });
+          }
+
+          pdf.save(`tshirt-${view}-${Date.now()}.pdf`);
+          const label = view === 'both' ? 'Front + Back' : view.charAt(0).toUpperCase() + view.slice(1);
+          this.showNotification(`${label} PDF exported with print guides`);
+        },
+
+        showNotification(message) {
+          this.toastMessage = message;
+          this.showToast = true;
+          setTimeout(() => { this.showToast = false; }, 3000);
+        },
+
+        addToCart() {
+          if (!this.canAddToCart) return;
+
+          const cartItem = {
+            id: Date.now(),
+            type: 'Custom T-Shirt',
+            color: this.selectedColor,
+            size: this.selectedSize,
+            material: this.selectedMaterial,
+            designs: {
+              front: {
+                hasImage: !!this.designs.front.image,
+                textCount: this.textLayers.front.length,
+                texts: this.textLayers.front.map(l => l.content)
+              },
+              back: {
+                hasImage: !!this.designs.back.image,
+                textCount: this.textLayers.back.length,
+                texts: this.textLayers.back.map(l => l.content)
+              }
+            },
+            viewsCustomized: this.getViewsWithContent(),
+            quantity: this.quantity,
+            unitPrice: this.totalPrice,
+            totalPrice: this.totalPrice * this.quantity
+          };
+
+          const cart = JSON.parse(localStorage.getItem('tshirtCart') || '[]');
+          cart.push(cartItem);
+          localStorage.setItem('tshirtCart', JSON.stringify(cart));
+
+          const viewsInfo = this.getViewsWithContent() === 2 ? 'Front + Back' :
+                           (this.viewHasContent('front') ? 'Front' : 'Back');
+          this.toastMessage = `${this.quantity}x ${this.selectedSize} ${this.selectedColor.name} T-Shirt (${viewsInfo}) - $${(this.totalPrice * this.quantity).toFixed(2)}`;
+          this.showToast = true;
+          setTimeout(() => {
+            this.showToast = false;
+          }, 3000);
+        }
+      };
+    }
+  </script>
+</body>
+</html>

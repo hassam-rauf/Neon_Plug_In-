@@ -1,0 +1,488 @@
+openapi: 3.0.3
+info:
+  title: WooCommerce Product Customizer API
+  description: REST API for product customization features
+  version: 1.0.0
+
+servers:
+  - url: /wp-json/wpc/v1
+    description: WordPress REST API namespace
+
+paths:
+  /upload:
+    post:
+      summary: Upload design image
+      description: Upload an image file for use in product customization
+      operationId: uploadImage
+      security:
+        - nonce: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - product_id
+                - zone_id
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file (JPEG, PNG, or PDF)
+                product_id:
+                  type: integer
+                  description: WooCommerce product ID
+                zone_id:
+                  type: string
+                  description: Target zone identifier
+                design_id:
+                  type: string
+                  format: uuid
+                  description: Existing design ID (optional, for updates)
+      responses:
+        '200':
+          description: Upload successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+        '400':
+          description: Invalid file or parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /design:
+    post:
+      summary: Save design state
+      description: Save or update a customer design
+      operationId: saveDesign
+      security:
+        - nonce: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DesignSaveRequest'
+      responses:
+        '200':
+          description: Design saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DesignResponse'
+        '400':
+          description: Invalid design data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /design/{design_id}:
+    get:
+      summary: Get design state
+      description: Retrieve a saved design by ID
+      operationId: getDesign
+      parameters:
+        - name: design_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Design retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DesignResponse'
+        '404':
+          description: Design not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete design
+      description: Delete a design and its associated files
+      operationId: deleteDesign
+      security:
+        - nonce: []
+      parameters:
+        - name: design_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Design deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        '404':
+          description: Design not found
+
+  /price:
+    post:
+      summary: Calculate price
+      description: Calculate the total price based on customization options
+      operationId: calculatePrice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceCalculationRequest'
+      responses:
+        '200':
+          description: Price calculated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceResponse'
+        '400':
+          description: Invalid parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /config/{product_id}:
+    get:
+      summary: Get product customizer config
+      description: Retrieve customizer configuration for a product
+      operationId: getProductConfig
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Configuration retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductConfig'
+        '404':
+          description: Product not found or customizer not enabled
+
+components:
+  securitySchemes:
+    nonce:
+      type: apiKey
+      in: header
+      name: X-WP-Nonce
+      description: WordPress REST API nonce for authentication
+
+  schemas:
+    UploadResponse:
+      type: object
+      required:
+        - success
+        - image
+      properties:
+        success:
+          type: boolean
+        image:
+          $ref: '#/components/schemas/UploadedImage'
+
+    UploadedImage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        url:
+          type: string
+          format: uri
+        thumbnail_url:
+          type: string
+          format: uri
+        original_name:
+          type: string
+        mime_type:
+          type: string
+        file_size:
+          type: integer
+        dimensions:
+          type: object
+          properties:
+            width:
+              type: integer
+            height:
+              type: integer
+
+    DesignSaveRequest:
+      type: object
+      required:
+        - product_id
+        - zones
+      properties:
+        design_id:
+          type: string
+          format: uuid
+          description: Existing design ID (omit for new)
+        product_id:
+          type: integer
+        customizer_type:
+          type: string
+        zones:
+          type: array
+          items:
+            $ref: '#/components/schemas/DesignZone'
+        selected_options:
+          type: object
+          additionalProperties: true
+
+    DesignResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        design:
+          $ref: '#/components/schemas/CustomerDesign'
+
+    CustomerDesign:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: integer
+        customizer_type:
+          type: string
+        zones:
+          type: array
+          items:
+            $ref: '#/components/schemas/DesignZone'
+        selected_options:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    DesignZone:
+      type: object
+      properties:
+        zone_id:
+          type: string
+        image:
+          $ref: '#/components/schemas/UploadedImage'
+        text_layers:
+          type: array
+          items:
+            $ref: '#/components/schemas/TextLayer'
+        canvas_state:
+          type: object
+          description: Fabric.js JSON state
+
+    TextLayer:
+      type: object
+      properties:
+        id:
+          type: string
+        content:
+          type: string
+          maxLength: 100
+        font_family:
+          type: string
+        font_size:
+          type: integer
+          minimum: 8
+          maximum: 200
+        color:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+        position_x:
+          type: number
+          minimum: 0
+          maximum: 1
+        position_y:
+          type: number
+          minimum: 0
+          maximum: 1
+        rotation:
+          type: number
+          minimum: -360
+          maximum: 360
+        scale:
+          type: number
+          minimum: 0.1
+          maximum: 5
+
+    PriceCalculationRequest:
+      type: object
+      required:
+        - product_id
+      properties:
+        product_id:
+          type: integer
+        selected_options:
+          type: object
+          additionalProperties: true
+        zones:
+          type: array
+          items:
+            type: object
+            properties:
+              zone_id:
+                type: string
+              has_image:
+                type: boolean
+              text_layer_count:
+                type: integer
+        quantity:
+          type: integer
+          minimum: 1
+          default: 1
+
+    PriceResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        price:
+          type: object
+          properties:
+            base:
+              type: number
+              format: float
+            modifiers:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  label:
+                    type: string
+                  amount:
+                    type: number
+                    format: float
+            subtotal:
+              type: number
+              format: float
+            quantity:
+              type: integer
+            total:
+              type: number
+              format: float
+            formatted_total:
+              type: string
+              example: "$45.00"
+
+    ProductConfig:
+      type: object
+      properties:
+        product_id:
+          type: integer
+        customizer_enabled:
+          type: boolean
+        customizer_type:
+          type: string
+        zones:
+          type: array
+          items:
+            $ref: '#/components/schemas/Zone'
+        price_modifiers:
+          type: array
+          items:
+            $ref: '#/components/schemas/PriceModifier'
+        options:
+          type: object
+          additionalProperties: true
+        model_url:
+          type: string
+          format: uri
+          description: URL to 3D model file (if applicable)
+        fonts:
+          type: array
+          items:
+            type: object
+            properties:
+              name:
+                type: string
+              family:
+                type: string
+
+    Zone:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        width:
+          type: number
+        height:
+          type: number
+        allows_image:
+          type: boolean
+        allows_text:
+          type: boolean
+        max_text_layers:
+          type: integer
+        uv_mapping:
+          type: object
+          properties:
+            u_start:
+              type: number
+            u_end:
+              type: number
+            v_start:
+              type: number
+            v_end:
+              type: number
+
+    PriceModifier:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [fixed, multiplier, tiered]
+        trigger:
+          type: string
+        value:
+          type: number
+        label:
+          type: string
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        data:
+          type: object
+          additionalProperties: true

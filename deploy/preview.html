@@ -1,0 +1,2432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WooCommerce Product Customizer - UI/UX Preview</title>
+
+  <!-- Google Fonts for Neon -->
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Monoton&family=Bungee&family=Sacramento&family=Great+Vibes&family=Yellowtail&family=Satisfy&family=Dancing+Script:wght@700&family=Lobster&family=Permanent+Marker&family=Rock+Salt&family=Righteous&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Alpine.js -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+  <style>
+    /* ==================== DESIGN SYSTEM ==================== */
+    :root {
+      /* Primary Actions */
+      --primary: #ff6b35;
+      --primary-hover: #ff8c5a;
+      --primary-active: #e55a2b;
+
+      /* Secondary */
+      --secondary: #7c3aed;
+      --secondary-hover: #8b5cf6;
+
+      /* Accent */
+      --accent: #06b6d4;
+
+      /* Neon Colors */
+      --neon-pink: #ff6b9d;
+      --neon-blue: #00d4ff;
+      --neon-green: #39ff14;
+      --neon-red: #ff3366;
+      --neon-yellow: #ffff00;
+      --neon-white: #ffffff;
+
+      /* Surfaces */
+      --surface-dark: #0a0a0f;
+      --surface-card: #1a1a2e;
+      --surface-elevated: #252542;
+
+      /* Text */
+      --text-primary: #ffffff;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+
+      /* Feedback */
+      --success: #10b981;
+      --warning: #f59e0b;
+      --error: #ef4444;
+
+      /* Borders */
+      --border-subtle: rgba(255, 255, 255, 0.1);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--surface-dark);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* ==================== NAVIGATION ==================== */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: var(--surface-card);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 12px 20px;
+    }
+
+    .nav-content {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .nav-title {
+      font-size: 14px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-tabs {
+      display: flex;
+      gap: 4px;
+    }
+
+    .nav-tab {
+      padding: 8px 16px;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 13px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .nav-tab:hover {
+      background: var(--surface-elevated);
+    }
+
+    .nav-tab.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* ==================== MAIN CONTAINER ==================== */
+    .main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* ==================== NEON CUSTOMIZER ==================== */
+    .neon-customizer {
+      display: grid;
+      gap: 24px;
+    }
+
+    @media (min-width: 768px) {
+      .neon-customizer {
+        grid-template-columns: 1fr 380px;
+      }
+    }
+
+    /* Preview Section */
+    .preview-section {
+      position: sticky;
+      top: 80px;
+    }
+
+    .neon-preview {
+      background: var(--surface-card);
+      border-radius: 16px;
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .neon-preview.bg-brick {
+      background:
+        linear-gradient(rgba(10, 10, 15, 0.4), rgba(10, 10, 15, 0.4)),
+        url('https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800') center/cover;
+    }
+
+    .neon-preview.bg-wood {
+      background:
+        linear-gradient(rgba(10, 10, 15, 0.5), rgba(10, 10, 15, 0.5)),
+        url('https://images.unsplash.com/photo-1558051815-0f18e64e6280?w=800') center/cover;
+    }
+
+    .neon-preview.bg-dark {
+      background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%);
+    }
+
+    .neon-preview.bg-none {
+      background:
+        repeating-linear-gradient(
+          45deg,
+          #1a1a2e,
+          #1a1a2e 10px,
+          #252542 10px,
+          #252542 20px
+        );
+    }
+
+    /* Neon Text Effect */
+    .neon-text {
+      font-size: clamp(2rem, 6vw, 4rem);
+      color: #fff;
+      text-align: center;
+      padding: 40px 20px;
+      transition: all 0.3s ease;
+      word-break: break-word;
+    }
+
+    .neon-text.font-script { font-family: 'Pacifico', cursive; }
+    .neon-text.font-retro { font-family: 'Monoton', cursive; }
+    .neon-text.font-block { font-family: 'Bungee', cursive; }
+    .neon-text.font-elegant { font-family: 'Sacramento', cursive; font-size: clamp(3rem, 8vw, 5rem); }
+    .neon-text.font-vibes { font-family: 'Great Vibes', cursive; font-size: clamp(3rem, 8vw, 5rem); }
+    .neon-text.font-yellowtail { font-family: 'Yellowtail', cursive; }
+    .neon-text.font-satisfy { font-family: 'Satisfy', cursive; }
+    .neon-text.font-dancing { font-family: 'Dancing Script', cursive; }
+    .neon-text.font-lobster { font-family: 'Lobster', cursive; }
+    .neon-text.font-marker { font-family: 'Permanent Marker', cursive; }
+    .neon-text.font-rock { font-family: 'Rock Salt', cursive; font-size: clamp(1.5rem, 4vw, 2.5rem); }
+    .neon-text.font-righteous { font-family: 'Righteous', cursive; }
+
+    .neon-text[data-color="pink"] {
+      text-shadow: 0 0 5px #ff6b9d, 0 0 10px #ff6b9d, 0 0 20px #ff6b9d, 0 0 40px #ff6b9d, 0 0 80px #ff6b9d;
+    }
+    .neon-text[data-color="blue"] {
+      text-shadow: 0 0 5px #00d4ff, 0 0 10px #00d4ff, 0 0 20px #00d4ff, 0 0 40px #00d4ff, 0 0 80px #00d4ff;
+    }
+    .neon-text[data-color="green"] {
+      text-shadow: 0 0 5px #39ff14, 0 0 10px #39ff14, 0 0 20px #39ff14, 0 0 40px #39ff14, 0 0 80px #39ff14;
+    }
+    .neon-text[data-color="red"] {
+      text-shadow: 0 0 5px #ff3366, 0 0 10px #ff3366, 0 0 20px #ff3366, 0 0 40px #ff3366, 0 0 80px #ff3366;
+    }
+    .neon-text[data-color="yellow"] {
+      text-shadow: 0 0 5px #ffff00, 0 0 10px #ffff00, 0 0 20px #ffff00, 0 0 40px #ffff00, 0 0 80px #ffff00;
+    }
+    .neon-text[data-color="white"] {
+      text-shadow: 0 0 5px #ffffff, 0 0 10px #ffffff, 0 0 20px #ffffff, 0 0 40px #ffffff, 0 0 80px #ffffff;
+    }
+
+    .neon-text.glow-subtle {
+      text-shadow: 0 0 5px var(--glow), 0 0 10px var(--glow), 0 0 15px var(--glow);
+    }
+
+    .neon-text.glow-bright {
+      text-shadow: 0 0 5px var(--glow), 0 0 10px var(--glow), 0 0 20px var(--glow), 0 0 40px var(--glow), 0 0 80px var(--glow), 0 0 120px var(--glow);
+    }
+
+    /* Background Selector */
+    .bg-selector {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      padding: 16px;
+      background: var(--surface-card);
+      border-radius: 0 0 16px 16px;
+      margin-top: -16px;
+    }
+
+    .bg-option {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      background: transparent;
+      border: 2px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .bg-option:hover {
+      border-color: var(--text-muted);
+    }
+
+    .bg-option.active {
+      border-color: var(--primary);
+      color: var(--text-primary);
+    }
+
+    .bg-icon {
+      font-size: 20px;
+    }
+
+    /* ==================== CONTROLS PANEL ==================== */
+    .controls-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .control-card {
+      background: var(--surface-card);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .control-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 12px;
+    }
+
+    /* Text Input */
+    .text-input-wrapper {
+      position: relative;
+    }
+
+    .text-input {
+      width: 100%;
+      padding: 14px 16px;
+      background: var(--surface-elevated);
+      border: 2px solid var(--border-subtle);
+      border-radius: 10px;
+      color: var(--text-primary);
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+
+    .text-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.2);
+    }
+
+    .text-input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .char-counter {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .char-counter.warning { color: var(--warning); }
+    .char-counter.error { color: var(--error); }
+
+    /* Color Swatches */
+    .color-swatches {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .color-swatch {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      border: 3px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+    }
+
+    .color-swatch:hover {
+      transform: scale(1.1);
+    }
+
+    .color-swatch.active {
+      border-color: #fff;
+    }
+
+    .color-swatch[data-color="pink"] { background: #ff6b9d; box-shadow: 0 0 20px #ff6b9d; }
+    .color-swatch[data-color="blue"] { background: #00d4ff; box-shadow: 0 0 20px #00d4ff; }
+    .color-swatch[data-color="green"] { background: #39ff14; box-shadow: 0 0 20px #39ff14; }
+    .color-swatch[data-color="red"] { background: #ff3366; box-shadow: 0 0 20px #ff3366; }
+    .color-swatch[data-color="yellow"] { background: #ffff00; box-shadow: 0 0 20px #ffff00; }
+    .color-swatch[data-color="white"] { background: #ffffff; box-shadow: 0 0 20px #ffffff; }
+
+    .color-swatch.active::after {
+      content: '✓';
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: #000;
+    }
+
+    .color-label {
+      display: block;
+      text-align: center;
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Glow Slider */
+    .glow-slider {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 8px;
+      background: var(--surface-elevated);
+      border-radius: 4px;
+      outline: none;
+      margin: 8px 0;
+    }
+
+    .glow-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 24px;
+      height: 24px;
+      background: var(--primary);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 0 10px var(--primary);
+    }
+
+    .glow-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Font Selector */
+    .font-options {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .font-option {
+      padding: 12px;
+      background: var(--surface-elevated);
+      border: 2px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .font-option:hover {
+      border-color: var(--text-muted);
+    }
+
+    .font-option.active {
+      border-color: var(--primary);
+      background: rgba(255, 107, 53, 0.1);
+    }
+
+    .font-option.font-script { font-family: 'Pacifico', cursive; }
+    .font-option.font-retro { font-family: 'Monoton', cursive; font-size: 14px; }
+    .font-option.font-block { font-family: 'Bungee', cursive; }
+    .font-option.font-elegant { font-family: 'Sacramento', cursive; font-size: 20px; }
+    .font-option.font-vibes { font-family: 'Great Vibes', cursive; font-size: 18px; }
+    .font-option.font-yellowtail { font-family: 'Yellowtail', cursive; }
+    .font-option.font-satisfy { font-family: 'Satisfy', cursive; }
+    .font-option.font-dancing { font-family: 'Dancing Script', cursive; }
+    .font-option.font-lobster { font-family: 'Lobster', cursive; }
+    .font-option.font-marker { font-family: 'Permanent Marker', cursive; font-size: 14px; }
+    .font-option.font-rock { font-family: 'Rock Salt', cursive; font-size: 12px; }
+    .font-option.font-righteous { font-family: 'Righteous', cursive; }
+
+    /* Size Selector */
+    .size-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .size-option {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--surface-elevated);
+      border: 2px solid var(--border-subtle);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .size-option:hover {
+      border-color: var(--text-muted);
+    }
+
+    .size-option.active {
+      border-color: var(--primary);
+      background: rgba(255, 107, 53, 0.1);
+    }
+
+    .size-radio {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--text-muted);
+      border-radius: 50%;
+      margin-right: 12px;
+      position: relative;
+    }
+
+    .size-option.active .size-radio {
+      border-color: var(--primary);
+    }
+
+    .size-option.active .size-radio::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 10px;
+      height: 10px;
+      background: var(--primary);
+      border-radius: 50%;
+    }
+
+    .size-name {
+      font-weight: 600;
+      color: var(--text-primary);
+      flex: 1;
+    }
+
+    .size-dimension {
+      color: var(--text-secondary);
+      margin-right: 16px;
+      font-size: 13px;
+    }
+
+    .size-price {
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 16px;
+    }
+
+    /* ==================== CART BAR ==================== */
+    .cart-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface-card);
+      border-top: 1px solid var(--border-subtle);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      z-index: 100;
+    }
+
+    @media (min-width: 768px) {
+      .cart-bar {
+        position: static;
+        background: transparent;
+        border: none;
+        padding: 20px 0;
+        flex-direction: column;
+        gap: 12px;
+      }
+    }
+
+    .cart-price {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .cart-price-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .cart-price-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .add-to-cart-btn {
+      padding: 16px 32px;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .add-to-cart-btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+    }
+
+    .add-to-cart-btn:disabled {
+      background: var(--surface-elevated);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    @media (min-width: 768px) {
+      .add-to-cart-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* Mobile padding for cart bar */
+    @media (max-width: 767px) {
+      .main {
+        padding-bottom: 100px;
+      }
+    }
+
+    /* ==================== MOBILE TABS ==================== */
+    .mobile-tabs {
+      display: flex;
+      background: var(--surface-card);
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 16px;
+    }
+
+    @media (min-width: 768px) {
+      .mobile-tabs {
+        display: none;
+      }
+    }
+
+    .mobile-tab {
+      flex: 1;
+      padding: 10px;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+
+    .mobile-tab.active {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* ==================== PRODUCT NAV ==================== */
+    .product-nav {
+      display: flex;
+      gap: 8px;
+      padding: 16px 20px;
+      overflow-x: auto;
+      background: var(--surface-card);
+      margin: -20px -20px 20px;
+    }
+
+    .product-nav-btn {
+      padding: 8px 16px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 20px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .product-nav-btn:hover {
+      border-color: var(--text-muted);
+    }
+
+    .product-nav-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    /* ==================== VISITING CARD PREVIEW ==================== */
+    .card-preview-container {
+      perspective: 1000px;
+      padding: 40px 20px;
+      background: var(--surface-card);
+      border-radius: 16px;
+    }
+
+    .card-preview {
+      position: relative;
+      width: 100%;
+      max-width: 350px;
+      aspect-ratio: 3.5 / 2;
+      margin: 0 auto;
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+      cursor: pointer;
+    }
+
+    .card-preview.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 10px 20px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .card-front {
+      background: #ffffff;
+    }
+
+    .card-back {
+      background: #ffffff;
+      transform: rotateY(180deg);
+      align-items: center;
+      justify-content: center;
+    }
+
+    .card-name {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin-top: auto;
+    }
+
+    .card-title {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 12px;
+    }
+
+    .card-contact {
+      font-size: 11px;
+      color: #374151;
+      line-height: 1.6;
+    }
+
+    .card-logo {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      width: 50px;
+      height: 50px;
+      background: var(--primary);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      font-size: 12px;
+    }
+
+    .flip-hint {
+      text-align: center;
+      margin-top: 16px;
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ==================== T-SHIRT PREVIEW ==================== */
+    .tshirt-preview {
+      background: var(--surface-card);
+      border-radius: 16px;
+      padding: 32px 20px;
+      text-align: center;
+    }
+
+    .tshirt-svg {
+      width: 100%;
+      max-width: 280px;
+      height: auto;
+    }
+
+    .tshirt-body {
+      transition: fill 0.3s ease;
+    }
+
+    .tshirt-design-area {
+      fill: none;
+      stroke: rgba(255,255,255,0.3);
+      stroke-dasharray: 5,5;
+    }
+
+    .tshirt-design-text {
+      fill: white;
+      font-size: 14px;
+      font-family: 'Inter', sans-serif;
+      text-anchor: middle;
+    }
+
+    .color-pills {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+
+    .color-pill {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .color-pill:hover {
+      transform: scale(1.1);
+    }
+
+    .color-pill.active {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--surface-card), 0 0 0 4px var(--primary);
+    }
+
+    /* ==================== MUG 3D PREVIEW ==================== */
+    .mug-preview {
+      background: var(--surface-card);
+      border-radius: 16px;
+      padding: 32px 20px;
+      text-align: center;
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .mug-3d-placeholder {
+      width: 200px;
+      height: 200px;
+      background: linear-gradient(135deg, #2a2a4a 0%, #1a1a2e 100%);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .mug-icon {
+      font-size: 80px;
+      opacity: 0.8;
+    }
+
+    .mug-label {
+      position: absolute;
+      bottom: 12px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 4px 12px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 12px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .zone-tabs {
+      display: flex;
+      gap: 8px;
+      margin-top: 20px;
+    }
+
+    .zone-tab {
+      padding: 10px 16px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      color: var(--text-secondary);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+      min-width: 90px;
+    }
+
+    .zone-tab:hover {
+      border-color: var(--primary);
+    }
+
+    .zone-tab.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+
+    .zone-tab.active span[style*="opacity"] {
+      opacity: 0.9 !important;
+    }
+
+    /* ==================== SECTION HEADERS ==================== */
+    .section-header {
+      padding: 40px 20px 20px;
+      text-align: center;
+    }
+
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .section-subtitle {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: var(--border-subtle);
+      margin: 40px 0;
+    }
+
+    /* ==================== UPLOAD ZONE ==================== */
+    .upload-zone {
+      border: 2px dashed var(--border-subtle) !important;
+      border-radius: 12px;
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .upload-zone:hover {
+      border-color: var(--primary) !important;
+      background: rgba(255, 107, 53, 0.05);
+    }
+
+    .upload-zone.dragging {
+      border-color: var(--accent) !important;
+      background: rgba(6, 182, 212, 0.1);
+      transform: scale(1.02);
+    }
+
+    .upload-zone.has-image {
+      border-style: solid !important;
+      border-color: var(--success) !important;
+      background: rgba(16, 185, 129, 0.05);
+    }
+
+    .upload-zone.has-image:hover {
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    /* ==================== QUANTITY SELECTOR ==================== */
+    .quantity-selector {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--surface-elevated);
+      border-radius: 12px;
+      padding: 8px;
+    }
+
+    .qty-btn {
+      width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 8px;
+      background: var(--surface-card);
+      color: var(--text-primary);
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .qty-btn:hover {
+      background: var(--primary);
+    }
+
+    .qty-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .qty-value {
+      min-width: 50px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    /* ==================== PREVIEW MODAL ==================== */
+    .preview-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .preview-modal.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .preview-modal-content {
+      max-width: 90vw;
+      max-height: 90vh;
+      position: relative;
+    }
+
+    .preview-modal-close {
+      position: absolute;
+      top: -40px;
+      right: 0;
+      background: var(--surface-card);
+      border: none;
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .preview-modal-close:hover {
+      background: var(--error);
+    }
+
+    .preview-btn {
+      padding: 10px 16px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-secondary);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .preview-btn:hover {
+      border-color: var(--primary);
+      color: var(--text-primary);
+    }
+
+    /* ==================== CART NOTIFICATION ==================== */
+    .cart-notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--success);
+      color: white;
+      padding: 16px 24px;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.4);
+      z-index: 1001;
+      transform: translateX(120%);
+      transition: transform 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .cart-notification.show {
+      transform: translateX(0);
+    }
+
+    .cart-notification-icon {
+      font-size: 24px;
+    }
+
+    .cart-notification-text {
+      font-weight: 600;
+    }
+
+    .cart-notification-details {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    /* ==================== FONT GRID (3 columns) ==================== */
+    .font-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    @media (max-width: 480px) {
+      .font-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .font-grid .font-option {
+      padding: 10px 8px;
+      font-size: 14px;
+    }
+
+    /* ==================== CART COUNT BADGE ==================== */
+    .cart-badge {
+      position: fixed;
+      top: 16px;
+      right: 20px;
+      background: var(--primary);
+      color: white;
+      min-width: 24px;
+      height: 24px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      z-index: 101;
+      padding: 0 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .cart-badge:hover {
+      transform: scale(1.1);
+    }
+
+    .cart-badge:empty {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Cart Badge -->
+  <div id="cart-badge" class="cart-badge" onclick="alert('Cart: ' + cart.length + ' items\nTotal: $' + cart.reduce((s,i) => s + i.totalPrice, 0).toFixed(2))"></div>
+
+  <!-- Cart Notification -->
+  <div id="cart-notification" class="cart-notification">
+    <span class="cart-notification-icon">✓</span>
+    <div>
+      <div class="cart-notification-text" id="notify-product">Added to cart!</div>
+      <div class="cart-notification-details" id="notify-details"></div>
+    </div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="nav">
+    <div class="nav-content">
+      <div class="nav-title">
+        <span>🎨</span>
+        <span>WooCommerce Product Customizer</span>
+      </div>
+      <div class="nav-tabs">
+        <button class="nav-tab active" onclick="showSection('neon')">Neon Sign</button>
+        <button class="nav-tab" onclick="showSection('card')">Visiting Card</button>
+        <button class="nav-tab" onclick="showSection('mug')">Mug</button>
+        <button class="nav-tab" onclick="showSection('tshirt')">T-Shirt</button>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main">
+
+    <!-- ==================== NEON SIGN SECTION ==================== -->
+    <section id="neon-section" x-data="neonCustomizer()">
+      <div class="section-header">
+        <h1 class="section-title">✨ Neon Sign Customizer</h1>
+        <p class="section-subtitle">Create your custom neon sign with real-time preview</p>
+      </div>
+
+      <div class="neon-customizer">
+        <!-- Preview -->
+        <div class="preview-section">
+          <div class="neon-preview" :class="'bg-' + background">
+            <div class="neon-text"
+                 :class="'font-' + font"
+                 :data-color="color"
+                 x-text="text || 'Your Text Here'">
+            </div>
+          </div>
+
+          <!-- Background Selector -->
+          <div class="bg-selector">
+            <button class="bg-option" :class="{ active: background === 'brick' }" @click="background = 'brick'">
+              <span class="bg-icon">🧱</span>
+              <span>Brick</span>
+            </button>
+            <button class="bg-option" :class="{ active: background === 'wood' }" @click="background = 'wood'">
+              <span class="bg-icon">🪵</span>
+              <span>Wood</span>
+            </button>
+            <button class="bg-option" :class="{ active: background === 'dark' }" @click="background = 'dark'">
+              <span class="bg-icon">🌑</span>
+              <span>Dark</span>
+            </button>
+            <button class="bg-option" :class="{ active: background === 'none' }" @click="background = 'none'">
+              <span class="bg-icon">⬜</span>
+              <span>None</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls-panel">
+          <!-- Mobile Tabs -->
+          <div class="mobile-tabs">
+            <button class="mobile-tab" :class="{ active: tab === 'text' }" @click="tab = 'text'">Text</button>
+            <button class="mobile-tab" :class="{ active: tab === 'color' }" @click="tab = 'color'">Color</button>
+            <button class="mobile-tab" :class="{ active: tab === 'style' }" @click="tab = 'style'">Style</button>
+            <button class="mobile-tab" :class="{ active: tab === 'size' }" @click="tab = 'size'">Size</button>
+          </div>
+
+          <!-- Text Input -->
+          <div class="control-card" x-show="tab === 'text' || window.innerWidth >= 768">
+            <label class="control-label">✏️ Your Text</label>
+            <div class="text-input-wrapper">
+              <input type="text"
+                     class="text-input"
+                     x-model="text"
+                     maxlength="25"
+                     placeholder="Enter your text...">
+              <span class="char-counter" :class="{ warning: text.length > 20, error: text.length >= 25 }">
+                <span x-text="text.length"></span>/25
+              </span>
+            </div>
+          </div>
+
+          <!-- Color Picker -->
+          <div class="control-card" x-show="tab === 'color' || window.innerWidth >= 768">
+            <label class="control-label">🎨 Neon Color</label>
+            <div class="color-swatches">
+              <template x-for="c in colors" :key="c.id">
+                <div style="text-align: center;">
+                  <button class="color-swatch"
+                          :class="{ active: color === c.id }"
+                          :data-color="c.id"
+                          @click="color = c.id">
+                  </button>
+                  <span class="color-label" x-text="c.name"></span>
+                </div>
+              </template>
+            </div>
+
+            <!-- Glow Slider -->
+            <div style="margin-top: 20px;">
+              <label class="control-label">✨ Glow Intensity</label>
+              <input type="range" class="glow-slider" x-model="glow" min="0" max="100">
+              <div class="glow-labels">
+                <span>Subtle</span>
+                <span>Bright</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Font Selector -->
+          <div class="control-card" x-show="tab === 'style' || window.innerWidth >= 768">
+            <label class="control-label">🔤 Font Style <span style="color: var(--text-muted); font-weight: 400;">(12 styles)</span></label>
+            <div class="font-grid">
+              <button class="font-option font-script" :class="{ active: font === 'script' }" @click="font = 'script'">Script</button>
+              <button class="font-option font-vibes" :class="{ active: font === 'vibes' }" @click="font = 'vibes'">Vibes</button>
+              <button class="font-option font-elegant" :class="{ active: font === 'elegant' }" @click="font = 'elegant'">Elegant</button>
+              <button class="font-option font-yellowtail" :class="{ active: font === 'yellowtail' }" @click="font = 'yellowtail'">Yellowtail</button>
+              <button class="font-option font-satisfy" :class="{ active: font === 'satisfy' }" @click="font = 'satisfy'">Satisfy</button>
+              <button class="font-option font-dancing" :class="{ active: font === 'dancing' }" @click="font = 'dancing'">Dancing</button>
+              <button class="font-option font-lobster" :class="{ active: font === 'lobster' }" @click="font = 'lobster'">Lobster</button>
+              <button class="font-option font-retro" :class="{ active: font === 'retro' }" @click="font = 'retro'">Retro</button>
+              <button class="font-option font-block" :class="{ active: font === 'block' }" @click="font = 'block'">Block</button>
+              <button class="font-option font-marker" :class="{ active: font === 'marker' }" @click="font = 'marker'">Marker</button>
+              <button class="font-option font-rock" :class="{ active: font === 'rock' }" @click="font = 'rock'">Rock</button>
+              <button class="font-option font-righteous" :class="{ active: font === 'righteous' }" @click="font = 'righteous'">Righteous</button>
+            </div>
+          </div>
+
+          <!-- Size Selector -->
+          <div class="control-card" x-show="tab === 'size' || window.innerWidth >= 768">
+            <label class="control-label">📐 Size</label>
+            <div class="size-options">
+              <template x-for="s in sizes" :key="s.id">
+                <div class="size-option" :class="{ active: size === s.id }" @click="size = s.id">
+                  <span class="size-radio"></span>
+                  <span class="size-name" x-text="s.name"></span>
+                  <span class="size-dimension" x-text="s.dimension"></span>
+                  <span class="size-price" x-text="'$' + s.price"></span>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Quantity Selector -->
+          <div class="control-card">
+            <label class="control-label">📦 Quantity</label>
+            <div class="quantity-selector">
+              <button class="qty-btn" @click="quantity > 1 && quantity--" :disabled="quantity <= 1">−</button>
+              <span class="qty-value" x-text="quantity"></span>
+              <button class="qty-btn" @click="quantity < 10 && quantity++">+</button>
+            </div>
+          </div>
+
+          <!-- Preview Button -->
+          <div class="control-card" style="display: flex; gap: 12px;">
+            <button class="preview-btn" style="flex: 1;" @click="showPreview = true">
+              🔍 <span>Full Preview</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cart Bar -->
+      <div class="cart-bar">
+        <div class="cart-price">
+          <span class="cart-price-label">Total (<span x-text="quantity"></span>x)</span>
+          <span class="cart-price-value" x-text="'$' + totalPrice"></span>
+        </div>
+        <button class="add-to-cart-btn" :disabled="!text.trim()" @click="addToCart()">
+          🛒 <span x-text="text.trim() ? 'Add to Cart' : 'Enter text'"></span>
+        </button>
+      </div>
+
+      <!-- Preview Modal -->
+      <div class="preview-modal" :class="{ active: showPreview }" @click.self="showPreview = false">
+        <div class="preview-modal-content">
+          <button class="preview-modal-close" @click="showPreview = false">✕</button>
+          <div class="neon-preview" :class="'bg-' + background" style="min-width: 80vw; min-height: 60vh; border-radius: 16px;">
+            <div class="neon-text"
+                 :class="'font-' + font"
+                 :data-color="color"
+                 style="font-size: clamp(3rem, 10vw, 8rem);"
+                 x-text="text || 'Your Text Here'">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VISITING CARD SECTION ==================== -->
+    <section id="card-section" style="display: none;" x-data="cardCustomizer()">
+      <div class="section-header">
+        <h1 class="section-title">💼 Visiting Card Designer</h1>
+        <p class="section-subtitle">Upload your design or customize with text</p>
+      </div>
+
+      <div class="neon-customizer">
+        <div class="preview-section">
+          <div class="card-preview-container">
+            <!-- Side indicator -->
+            <div style="text-align: center; margin-bottom: 12px; color: var(--accent); font-weight: 600;">
+              Viewing: <span x-text="isFlipped ? 'Back Side' : 'Front Side'"></span>
+            </div>
+            <div class="card-preview" :class="{ flipped: isFlipped }" @click="isFlipped = !isFlipped">
+              <!-- Front Side -->
+              <div class="card-face card-front" :style="frontImage ? 'padding: 0;' : ''">
+                <template x-if="frontImage">
+                  <img :src="frontImage" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                </template>
+                <template x-if="!frontImage">
+                  <div style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div></div>
+                    <div>
+                      <div class="card-name" x-text="name || 'Your Name'"></div>
+                      <div class="card-title" x-text="title || 'Your Title'"></div>
+                      <div class="card-contact">
+                        <div x-text="phone || '+1 234 567 890'"></div>
+                        <div x-text="email || 'email@company.com'"></div>
+                      </div>
+                    </div>
+                    <div class="card-logo" x-text="logoText || 'LOGO'"></div>
+                  </div>
+                </template>
+              </div>
+              <!-- Back Side -->
+              <div class="card-face card-back" :style="backImage ? 'padding: 0;' : ''">
+                <template x-if="backImage">
+                  <img :src="backImage" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                </template>
+                <template x-if="!backImage">
+                  <div>
+                    <div style="font-size: 40px; color: #1a1a2e;" x-text="logoText || 'LOGO'"></div>
+                    <div style="color: #6b7280; font-size: 12px; margin-top: 8px;" x-text="company || 'Your Company'"></div>
+                  </div>
+                </template>
+              </div>
+            </div>
+            <div class="flip-hint">👆 Click card to flip | <span x-text="isFlipped ? 'Showing Back' : 'Showing Front'"></span></div>
+          </div>
+        </div>
+
+        <div class="controls-panel">
+          <!-- Design Mode Toggle -->
+          <div class="control-card">
+            <label class="control-label">🎨 Design Mode</label>
+            <div style="display: flex; gap: 8px;">
+              <button style="flex: 1; padding: 12px; border-radius: 8px; border: 2px solid var(--border-subtle); background: var(--surface-elevated); color: var(--text-primary); cursor: pointer;"
+                      :style="designMode === 'upload' ? 'border-color: var(--primary); background: rgba(255,107,53,0.1);' : ''"
+                      @click="designMode = 'upload'">
+                📷 Upload Design
+              </button>
+              <button style="flex: 1; padding: 12px; border-radius: 8px; border: 2px solid var(--border-subtle); background: var(--surface-elevated); color: var(--text-primary); cursor: pointer;"
+                      :style="designMode === 'text' ? 'border-color: var(--primary); background: rgba(255,107,53,0.1);' : ''"
+                      @click="designMode = 'text'">
+                ✏️ Text Only
+              </button>
+            </div>
+          </div>
+
+          <!-- Upload Mode -->
+          <template x-if="designMode === 'upload'">
+            <div>
+              <div class="control-card">
+                <label class="control-label">📷 Front Side Design</label>
+                <div class="upload-zone"
+                     :class="{ 'dragging': isDraggingFront, 'has-image': frontImage }"
+                     @click="$refs.frontInput.click()"
+                     @drop.prevent="handleDropFront($event)"
+                     @dragover.prevent="isDraggingFront = true"
+                     @dragleave.prevent="isDraggingFront = false"
+                     style="padding: 20px;">
+                  <input type="file" x-ref="frontInput" @change="handleFrontUpload($event)" accept="image/*" style="display: none;">
+                  <template x-if="frontImage">
+                    <div>
+                      <img :src="frontImage" style="max-width: 100%; max-height: 80px; border-radius: 6px;">
+                      <div style="color: var(--success); font-size: 12px; margin-top: 6px;">✓ Front uploaded</div>
+                      <button @click.stop="frontImage = null" style="margin-top: 6px; padding: 4px 10px; background: var(--error); color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer;">Remove</button>
+                    </div>
+                  </template>
+                  <template x-if="!frontImage">
+                    <div>
+                      <div style="font-size: 24px;">📄</div>
+                      <div style="color: var(--text-secondary); font-size: 13px;">Upload front design</div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+
+              <div class="control-card">
+                <label class="control-label">📷 Back Side Design</label>
+                <div class="upload-zone"
+                     :class="{ 'dragging': isDraggingBack, 'has-image': backImage }"
+                     @click="$refs.backInput.click()"
+                     @drop.prevent="handleDropBack($event)"
+                     @dragover.prevent="isDraggingBack = true"
+                     @dragleave.prevent="isDraggingBack = false"
+                     style="padding: 20px;">
+                  <input type="file" x-ref="backInput" @change="handleBackUpload($event)" accept="image/*" style="display: none;">
+                  <template x-if="backImage">
+                    <div>
+                      <img :src="backImage" style="max-width: 100%; max-height: 80px; border-radius: 6px;">
+                      <div style="color: var(--success); font-size: 12px; margin-top: 6px;">✓ Back uploaded</div>
+                      <button @click.stop="backImage = null" style="margin-top: 6px; padding: 4px 10px; background: var(--error); color: white; border: none; border-radius: 4px; font-size: 11px; cursor: pointer;">Remove</button>
+                    </div>
+                  </template>
+                  <template x-if="!backImage">
+                    <div>
+                      <div style="font-size: 24px;">📄</div>
+                      <div style="color: var(--text-secondary); font-size: 13px;">Upload back design</div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- Text Mode -->
+          <template x-if="designMode === 'text'">
+            <div class="control-card">
+              <label class="control-label">📝 Contact Details</label>
+              <div style="display: flex; flex-direction: column; gap: 10px;">
+                <input type="text" class="text-input" x-model="name" placeholder="Full Name">
+                <input type="text" class="text-input" x-model="title" placeholder="Title / Position">
+                <input type="tel" class="text-input" x-model="phone" placeholder="Phone Number">
+                <input type="email" class="text-input" x-model="email" placeholder="Email Address">
+                <input type="text" class="text-input" x-model="company" placeholder="Company Name">
+                <input type="text" class="text-input" x-model="logoText" placeholder="Logo Text (e.g., ABC)">
+              </div>
+            </div>
+          </template>
+
+          <div class="control-card">
+            <label class="control-label">📦 Card Quantity</label>
+            <div class="size-options">
+              <div class="size-option" :class="{ active: qty === 100 }" @click="qty = 100">
+                <span class="size-radio"></span>
+                <span class="size-name">100 cards</span>
+                <span class="size-price">$15</span>
+              </div>
+              <div class="size-option" :class="{ active: qty === 250 }" @click="qty = 250">
+                <span class="size-radio"></span>
+                <span class="size-name">250 cards</span>
+                <span class="size-price">$30</span>
+              </div>
+              <div class="size-option" :class="{ active: qty === 500 }" @click="qty = 500">
+                <span class="size-radio"></span>
+                <span class="size-name">500 cards</span>
+                <span class="size-dimension" style="color: var(--success);">Best Value</span>
+                <span class="size-price">$50</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="control-card">
+            <label class="control-label">🔢 Order Quantity</label>
+            <div class="quantity-selector">
+              <button class="qty-btn" @click="quantity > 1 && quantity--" :disabled="quantity <= 1">−</button>
+              <span class="qty-value" x-text="quantity"></span>
+              <button class="qty-btn" @click="quantity < 10 && quantity++">+</button>
+            </div>
+          </div>
+
+          <div class="control-card">
+            <button class="preview-btn" style="width: 100%;" @click="showPreview = true">
+              🔍 <span>Full Preview (Both Sides)</span>
+            </button>
+          </div>
+
+          <div class="control-card">
+            <label class="control-label">🎯 Try Demo</label>
+            <button @click="loadDemo()" style="width: 100%; padding: 12px; background: var(--secondary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+              ✨ Load Sample Design
+            </button>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px; text-align: center;">See how your card will look</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cart-bar">
+        <div class="cart-price">
+          <span class="cart-price-label">Total (<span x-text="qty"></span> cards x <span x-text="quantity"></span>)</span>
+          <span class="cart-price-value" x-text="'$' + price.toFixed(2)"></span>
+        </div>
+        <button class="add-to-cart-btn" :disabled="!hasDesign" @click="addToCart()">
+          🛒 <span x-text="hasDesign ? 'Add to Cart' : 'Add design first'"></span>
+        </button>
+      </div>
+
+      <!-- Preview Modal -->
+      <div class="preview-modal" :class="{ active: showPreview }" @click.self="showPreview = false">
+        <div class="preview-modal-content" style="background: var(--surface-card); padding: 24px; border-radius: 16px; max-width: 500px;">
+          <button class="preview-modal-close" @click="showPreview = false">✕</button>
+          <h3 style="text-align: center; margin-bottom: 16px;">💼 Card Preview</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div style="text-align: center;">
+              <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Front Side</div>
+              <div style="background: white; padding: 12px; border-radius: 8px; min-height: 100px; display: flex; align-items: center; justify-content: center;">
+                <img x-show="frontImage" :src="frontImage" style="max-width: 100%; max-height: 80px; border-radius: 4px;">
+                <div x-show="!frontImage" style="color: #333; font-size: 11px; text-align: left;">
+                  <div style="font-weight: bold;" x-text="name || 'Your Name'"></div>
+                  <div style="font-size: 10px; color: #666;" x-text="title || 'Title'"></div>
+                </div>
+              </div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Back Side</div>
+              <div style="background: white; padding: 12px; border-radius: 8px; min-height: 100px; display: flex; align-items: center; justify-content: center;">
+                <img x-show="backImage" :src="backImage" style="max-width: 100%; max-height: 80px; border-radius: 4px;">
+                <div x-show="!backImage" style="color: #333; font-size: 14px; font-weight: bold;" x-text="logoText || 'LOGO'"></div>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top: 16px; text-align: center; padding: 12px; background: var(--surface-elevated); border-radius: 8px;">
+            <span style="color: var(--text-muted);">Qty:</span> <span x-text="qty + ' cards x ' + quantity"></span>
+            <span style="margin-left: 16px; color: var(--accent); font-weight: 600;" x-text="'$' + price.toFixed(2)"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== MUG SECTION ==================== -->
+    <section id="mug-section" style="display: none;" x-data="mugCustomizer()">
+      <div class="section-header">
+        <h1 class="section-title">☕ Mug Customizer</h1>
+        <p class="section-subtitle">3-Zone Mug (Total: 7.75" x 3.75" height)</p>
+      </div>
+
+      <div class="neon-customizer">
+        <div class="preview-section">
+          <div class="mug-preview">
+            <div class="mug-3d-placeholder" :style="zoneImages[zone] ? 'background-image: url(' + zoneImages[zone] + '); background-size: cover; background-position: center;' : ''">
+              <span class="mug-icon" x-show="!zoneImages[zone] && !zoneTexts[zone]">☕</span>
+              <!-- Show text when no image but text exists -->
+              <span x-show="!zoneImages[zone] && zoneTexts[zone]" style="font-size: 18px; color: white; text-align: center; padding: 10px; word-break: break-word;" x-text="zoneTexts[zone]"></span>
+              <span class="mug-label" x-text="zoneImages[zone] ? zones[zone].label + ' Image' : (zoneTexts[zone] ? zones[zone].label + ' Text' : '3D Preview')"></span>
+            </div>
+            <!-- Zone dimension display -->
+            <div style="margin-top: 12px; padding: 8px 16px; background: var(--surface-elevated); border-radius: 8px; display: inline-block;">
+              <span style="color: var(--text-muted); font-size: 12px;">Zone Size: </span>
+              <span style="color: var(--accent); font-weight: 600;" x-text="zones[zone].width + '&quot; x ' + zones[zone].height + '&quot;'"></span>
+            </div>
+            <div class="zone-tabs">
+              <button class="zone-tab" :class="{ active: zone === 'front' }" @click="zone = 'front'">
+                <span>Front</span>
+                <span style="display: block; font-size: 10px; opacity: 0.7;">3.125" x 3.75"</span>
+              </button>
+              <button class="zone-tab" :class="{ active: zone === 'back' }" @click="zone = 'back'">
+                <span>Back</span>
+                <span style="display: block; font-size: 10px; opacity: 0.7;">3.125" x 3.75"</span>
+              </button>
+              <button class="zone-tab" :class="{ active: zone === 'rear' }" @click="zone = 'rear'">
+                <span>Near Handle</span>
+                <span style="display: block; font-size: 10px; opacity: 0.7;">1.5" x 3.75"</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="controls-panel">
+          <div class="control-card">
+            <label class="control-label">📷 Upload Image <span x-show="zone" style="color: var(--accent);" x-text="'(' + zone + ')'"></span></label>
+            <div class="upload-zone"
+                 :class="{ 'dragging': isDragging, 'has-image': zoneImages[zone] }"
+                 @click="$refs.mugFileInput.click()"
+                 @drop.prevent="handleDrop($event)"
+                 @dragover.prevent="isDragging = true"
+                 @dragleave.prevent="isDragging = false"
+                 @dragenter.prevent="isDragging = true"
+                 style="border: 2px dashed var(--border-subtle); border-radius: 12px; padding: 32px; text-align: center; cursor: pointer; transition: all 0.2s;">
+              <input type="file"
+                     x-ref="mugFileInput"
+                     @change="handleFileSelect($event)"
+                     accept="image/png,image/jpeg,image/jpg,application/pdf"
+                     style="display: none;">
+
+              <!-- Show uploaded image preview -->
+              <template x-if="zoneImages[zone]">
+                <div>
+                  <img :src="zoneImages[zone]" style="max-width: 100%; max-height: 150px; border-radius: 8px; margin-bottom: 8px;">
+                  <div style="color: var(--success); font-size: 14px;">✓ Image uploaded</div>
+                  <button @click.stop="removeImage()" style="margin-top: 8px; padding: 6px 12px; background: var(--error); color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Remove</button>
+                </div>
+              </template>
+
+              <!-- Show upload prompt when no image -->
+              <template x-if="!zoneImages[zone]">
+                <div>
+                  <div style="font-size: 32px; margin-bottom: 8px;" x-text="isDragging ? '📥' : '☁️'"></div>
+                  <div style="color: var(--text-secondary);" x-text="isDragging ? 'Drop your file here!' : 'Drag & drop or click to browse'"></div>
+                  <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">PNG, JPG, PDF (max 10MB)</div>
+                </div>
+              </template>
+            </div>
+            <div x-show="uploadError" style="color: var(--error); font-size: 12px; margin-top: 8px;" x-text="uploadError"></div>
+          </div>
+
+          <div class="control-card">
+            <label class="control-label">✏️ Add Text</label>
+            <input type="text" class="text-input" x-model="zoneTexts[zone]" placeholder="Enter text for this zone...">
+            <div x-show="zoneTexts[zone]" style="margin-top: 8px; padding: 8px; background: var(--surface-elevated); border-radius: 6px; color: var(--text-secondary); font-size: 12px;">
+              Preview: <span style="color: var(--text-primary);" x-text="zoneTexts[zone]"></span>
+            </div>
+          </div>
+
+          <div class="control-card">
+            <label class="control-label">🔢 Quantity</label>
+            <div class="quantity-selector">
+              <button class="qty-btn" @click="quantity > 1 && quantity--" :disabled="quantity <= 1">−</button>
+              <span class="qty-value" x-text="quantity"></span>
+              <button class="qty-btn" @click="quantity < 50 && quantity++">+</button>
+            </div>
+          </div>
+
+          <div class="control-card">
+            <button class="preview-btn" style="width: 100%;" @click="showPreview = true">
+              🔍 <span>Full Preview (All Zones)</span>
+            </button>
+          </div>
+
+          <div class="control-card">
+            <label class="control-label">🎯 Try Demo</label>
+            <button @click="loadDemo()" style="width: 100%; padding: 12px; background: var(--secondary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+              ✨ Load Sample Design
+            </button>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px; text-align: center;">See how your mug will look with designs</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cart-bar">
+        <div class="cart-price">
+          <span class="cart-price-label">Total (<span x-text="quantity"></span>x)</span>
+          <span class="cart-price-value" x-text="'$' + price.toFixed(2)"></span>
+        </div>
+        <button class="add-to-cart-btn" :disabled="!hasDesign" @click="addToCart()">
+          🛒 <span x-text="hasDesign ? 'Add to Cart' : 'Add a design first'"></span>
+        </button>
+      </div>
+
+      <!-- Preview Modal -->
+      <div class="preview-modal" :class="{ active: showPreview }" @click.self="showPreview = false">
+        <div class="preview-modal-content" style="background: var(--surface-card); padding: 24px; border-radius: 16px; max-width: 500px;">
+          <button class="preview-modal-close" @click="showPreview = false">✕</button>
+          <h3 style="text-align: center; margin-bottom: 16px;">☕ Mug Preview - All Zones</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+            <div style="text-align: center;">
+              <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">Front (3.125")</div>
+              <div style="background: var(--surface-elevated); padding: 12px; border-radius: 8px; min-height: 80px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                <img x-show="zoneImages.front" :src="zoneImages.front" style="max-width: 100%; max-height: 50px; border-radius: 4px;">
+                <span x-show="!zoneImages.front && zoneTexts.front" x-text="zoneTexts.front" style="color: var(--text-secondary); font-size: 11px; word-break: break-word;"></span>
+                <span x-show="!zoneImages.front && !zoneTexts.front" style="color: var(--text-muted); font-size: 11px;">Empty</span>
+              </div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">Back (3.125")</div>
+              <div style="background: var(--surface-elevated); padding: 12px; border-radius: 8px; min-height: 80px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                <img x-show="zoneImages.back" :src="zoneImages.back" style="max-width: 100%; max-height: 50px; border-radius: 4px;">
+                <span x-show="!zoneImages.back && zoneTexts.back" x-text="zoneTexts.back" style="color: var(--text-secondary); font-size: 11px; word-break: break-word;"></span>
+                <span x-show="!zoneImages.back && !zoneTexts.back" style="color: var(--text-muted); font-size: 11px;">Empty</span>
+              </div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 11px; color: var(--text-muted); margin-bottom: 6px;">Handle (1.5")</div>
+              <div style="background: var(--surface-elevated); padding: 12px; border-radius: 8px; min-height: 80px; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+                <img x-show="zoneImages.rear" :src="zoneImages.rear" style="max-width: 100%; max-height: 50px; border-radius: 4px;">
+                <span x-show="!zoneImages.rear && zoneTexts.rear" x-text="zoneTexts.rear" style="color: var(--text-secondary); font-size: 11px; word-break: break-word;"></span>
+                <span x-show="!zoneImages.rear && !zoneTexts.rear" style="color: var(--text-muted); font-size: 11px;">Empty</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top: 16px; text-align: center; padding: 12px; background: var(--surface-elevated); border-radius: 8px;">
+            <span style="color: var(--text-muted);">Mug Size:</span> <span>7.75" x 3.75" height</span>
+            <span style="margin-left: 16px; color: var(--accent); font-weight: 600;" x-text="'$' + price.toFixed(2)"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== T-SHIRT SECTION ==================== -->
+    <section id="tshirt-section" style="display: none;" x-data="tshirtCustomizer()">
+      <div class="section-header">
+        <h1 class="section-title">👕 T-Shirt Customizer</h1>
+        <p class="section-subtitle">Design front, back, and sleeves</p>
+      </div>
+
+      <div class="neon-customizer">
+        <div class="preview-section">
+          <div class="tshirt-preview">
+            <!-- Zone indicator -->
+            <div style="text-align: center; margin-bottom: 12px; color: var(--accent); font-weight: 600;">
+              Editing: <span x-text="zones[zone].label"></span>
+            </div>
+
+            <!-- T-Shirt Preview with Design Overlay -->
+            <div style="position: relative; display: inline-block;">
+              <svg viewBox="0 0 400 450" class="tshirt-svg">
+                <!-- T-Shirt Shape -->
+                <path class="tshirt-body" :fill="color" d="
+                  M 85,50
+                  L 55,80
+                  L 25,130
+                  L 65,145
+                  L 80,100
+                  L 80,400
+                  L 320,400
+                  L 320,100
+                  L 335,145
+                  L 375,130
+                  L 345,80
+                  L 315,50
+                  L 260,50
+                  C 250,75 230,90 200,90
+                  C 170,90 150,75 140,50
+                  Z
+                "/>
+                <!-- Collar -->
+                <path fill="none" stroke="rgba(0,0,0,0.2)" stroke-width="2" d="
+                  M 140,50
+                  C 150,75 170,90 200,90
+                  C 230,90 250,75 260,50
+                "/>
+                <!-- Design Area Outline -->
+                <rect x="120" y="130" width="160" height="180" rx="4" fill="rgba(255,255,255,0.1)" stroke="rgba(255,255,255,0.3)" stroke-dasharray="5,5"/>
+              </svg>
+
+              <!-- Design Overlay (positioned on top of SVG) -->
+              <div style="position: absolute; top: 29%; left: 30%; width: 40%; height: 40%; display: flex; align-items: center; justify-content: center; overflow: hidden; border-radius: 4px;">
+                <!-- Show uploaded image for current zone -->
+                <img x-show="zoneImages[zone]" :src="zoneImages[zone]" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                <!-- Show text if no image but text exists -->
+                <div x-show="!zoneImages[zone] && zoneTexts[zone]" style="color: white; font-size: 14px; text-align: center; padding: 8px; word-break: break-word; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);" x-text="zoneTexts[zone]"></div>
+                <!-- Show placeholder if nothing -->
+                <div x-show="!zoneImages[zone] && !zoneTexts[zone]" style="color: rgba(255,255,255,0.5); font-size: 12px; text-align: center;">
+                  <div style="font-size: 24px; margin-bottom: 4px;">📷</div>
+                  <span x-text="zones[zone].label"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Design Summary -->
+            <div style="margin-top: 12px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
+              <div style="padding: 4px 8px; background: var(--surface-elevated); border-radius: 6px; font-size: 11px;"
+                   :style="zoneImages.front || zoneTexts.front ? 'border: 1px solid var(--success);' : 'opacity: 0.5;'">
+                Front <span x-show="zoneImages.front">📷</span><span x-show="zoneTexts.front && !zoneImages.front">✏️</span>
+              </div>
+              <div style="padding: 4px 8px; background: var(--surface-elevated); border-radius: 6px; font-size: 11px;"
+                   :style="zoneImages.back || zoneTexts.back ? 'border: 1px solid var(--success);' : 'opacity: 0.5;'">
+                Back <span x-show="zoneImages.back">📷</span><span x-show="zoneTexts.back && !zoneImages.back">✏️</span>
+              </div>
+              <div style="padding: 4px 8px; background: var(--surface-elevated); border-radius: 6px; font-size: 11px;"
+                   :style="zoneImages.leftSleeve || zoneTexts.leftSleeve ? 'border: 1px solid var(--success);' : 'opacity: 0.5;'">
+                L.Sleeve <span x-show="zoneImages.leftSleeve">📷</span><span x-show="zoneTexts.leftSleeve && !zoneImages.leftSleeve">✏️</span>
+              </div>
+              <div style="padding: 4px 8px; background: var(--surface-elevated); border-radius: 6px; font-size: 11px;"
+                   :style="zoneImages.rightSleeve || zoneTexts.rightSleeve ? 'border: 1px solid var(--success);' : 'opacity: 0.5;'">
+                R.Sleeve <span x-show="zoneImages.rightSleeve">📷</span><span x-show="zoneTexts.rightSleeve && !zoneImages.rightSleeve">✏️</span>
+              </div>
+            </div>
+
+            <!-- Zone Tabs -->
+            <div class="zone-tabs" style="margin-top: 16px; justify-content: center;">
+              <button class="zone-tab" :class="{ active: zone === 'front' }" @click="zone = 'front'">Front</button>
+              <button class="zone-tab" :class="{ active: zone === 'back' }" @click="zone = 'back'">Back</button>
+              <button class="zone-tab" :class="{ active: zone === 'leftSleeve' }" @click="zone = 'leftSleeve'">L.Sleeve</button>
+              <button class="zone-tab" :class="{ active: zone === 'rightSleeve' }" @click="zone = 'rightSleeve'">R.Sleeve</button>
+            </div>
+
+            <div class="color-pills" style="margin-top: 16px;">
+              <button class="color-pill" :class="{ active: color === '#1a1a1a' }" @click="color = '#1a1a1a'" style="background: #1a1a1a;"></button>
+              <button class="color-pill" :class="{ active: color === '#ffffff' }" @click="color = '#ffffff'" style="background: #ffffff; border: 1px solid #e0e0e0;"></button>
+              <button class="color-pill" :class="{ active: color === '#1e3a5f' }" @click="color = '#1e3a5f'" style="background: #1e3a5f;"></button>
+              <button class="color-pill" :class="{ active: color === '#dc2626' }" @click="color = '#dc2626'" style="background: #dc2626;"></button>
+              <button class="color-pill" :class="{ active: color === '#059669' }" @click="color = '#059669'" style="background: #059669;"></button>
+              <button class="color-pill" :class="{ active: color === '#2563eb' }" @click="color = '#2563eb'" style="background: #2563eb;"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="controls-panel">
+          <div class="control-card">
+            <label class="control-label">📐 Size</label>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <template x-for="s in ['XS', 'S', 'M', 'L', 'XL', 'XXL']">
+                <button style="flex: 1; min-width: 50px; padding: 12px; background: var(--surface-elevated); border: 2px solid var(--border-subtle); border-radius: 8px; color: var(--text-primary); cursor: pointer;"
+                        :style="size === s ? 'border-color: var(--primary); background: rgba(255,107,53,0.1);' : ''"
+                        @click="size = s"
+                        x-text="s">
+                </button>
+              </template>
+            </div>
+          </div>
+
+          <div class="control-card">
+            <label class="control-label">📷 Upload Design <span style="color: var(--accent);" x-text="'(' + zones[zone].label + ')'"></span></label>
+            <div class="upload-zone"
+                 :class="{ 'dragging': isDragging, 'has-image': zoneImages[zone] }"
+                 @click="$refs.tshirtFileInput.click()"
+                 @drop.prevent="handleDrop($event)"
+                 @dragover.prevent="isDragging = true"
+                 @dragleave.prevent="isDragging = false"
+                 @dragenter.prevent="isDragging = true"
+                 style="border: 2px dashed var(--border-subtle); border-radius: 12px; padding: 24px; text-align: center; cursor: pointer; transition: all 0.2s;">
+              <input type="file"
+                     x-ref="tshirtFileInput"
+                     @change="handleFileSelect($event)"
+                     accept="image/png,image/jpeg,image/jpg"
+                     style="display: none;">
+
+              <template x-if="zoneImages[zone]">
+                <div>
+                  <img :src="zoneImages[zone]" style="max-width: 100%; max-height: 100px; border-radius: 8px; margin-bottom: 8px;">
+                  <div style="color: var(--success); font-size: 14px;">✓ Design uploaded</div>
+                  <button @click.stop="removeImage()" style="margin-top: 8px; padding: 6px 12px; background: var(--error); color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer;">Remove</button>
+                </div>
+              </template>
+
+              <template x-if="!zoneImages[zone]">
+                <div>
+                  <div style="font-size: 28px; margin-bottom: 8px;" x-text="isDragging ? '📥' : '☁️'"></div>
+                  <div style="color: var(--text-secondary); font-size: 14px;" x-text="isDragging ? 'Drop here!' : 'Drag & drop or click'"></div>
+                </div>
+              </template>
+            </div>
+            <div x-show="uploadError" style="color: var(--error); font-size: 12px; margin-top: 8px;" x-text="uploadError"></div>
+          </div>
+
+          <div class="control-card">
+            <label class="control-label">✏️ Add Text <span style="color: var(--accent);" x-text="'(' + zones[zone].label + ')'"></span></label>
+            <input type="text" class="text-input" x-model="zoneTexts[zone]" placeholder="Enter text for this zone...">
+            <div x-show="zoneTexts[zone]" style="margin-top: 8px; padding: 8px; background: var(--surface-elevated); border-radius: 6px; color: var(--text-secondary); font-size: 12px;">
+              Preview: <span style="color: var(--text-primary);" x-text="zoneTexts[zone]"></span>
+            </div>
+          </div>
+
+          <div class="control-card">
+            <label class="control-label">🔢 Quantity</label>
+            <div class="quantity-selector">
+              <button class="qty-btn" @click="quantity > 1 && quantity--" :disabled="quantity <= 1">−</button>
+              <span class="qty-value" x-text="quantity"></span>
+              <button class="qty-btn" @click="quantity < 50 && quantity++">+</button>
+            </div>
+          </div>
+
+          <div class="control-card">
+            <button class="preview-btn" style="width: 100%;" @click="showPreview = true">
+              🔍 <span>Full Preview (All Zones)</span>
+            </button>
+          </div>
+
+          <div class="control-card">
+            <label class="control-label">🎯 Try Demo</label>
+            <button @click="loadDemo()" style="width: 100%; padding: 12px; background: var(--secondary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+              ✨ Load Sample Design
+            </button>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 6px; text-align: center;">See how your t-shirt will look with designs</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Modal -->
+      <div class="preview-modal" :class="{ active: showPreview }" @click.self="showPreview = false">
+        <div class="preview-modal-content" style="background: var(--surface-card); padding: 24px; border-radius: 16px; max-width: 500px;">
+          <button class="preview-modal-close" @click="showPreview = false">✕</button>
+          <h3 style="text-align: center; margin-bottom: 16px;">T-Shirt Preview</h3>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+            <div style="text-align: center;">
+              <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Front</div>
+              <div style="background: var(--surface-elevated); padding: 16px; border-radius: 8px; min-height: 80px; display: flex; align-items: center; justify-content: center;">
+                <img x-show="zoneImages.front" :src="zoneImages.front" style="max-width: 100%; max-height: 60px;">
+                <span x-show="!zoneImages.front && zoneTexts.front" x-text="zoneTexts.front" style="color: var(--text-secondary);"></span>
+                <span x-show="!zoneImages.front && !zoneTexts.front" style="color: var(--text-muted);">No design</span>
+              </div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Back</div>
+              <div style="background: var(--surface-elevated); padding: 16px; border-radius: 8px; min-height: 80px; display: flex; align-items: center; justify-content: center;">
+                <img x-show="zoneImages.back" :src="zoneImages.back" style="max-width: 100%; max-height: 60px;">
+                <span x-show="!zoneImages.back && zoneTexts.back" x-text="zoneTexts.back" style="color: var(--text-secondary);"></span>
+                <span x-show="!zoneImages.back && !zoneTexts.back" style="color: var(--text-muted);">No design</span>
+              </div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Left Sleeve</div>
+              <div style="background: var(--surface-elevated); padding: 16px; border-radius: 8px; min-height: 80px; display: flex; align-items: center; justify-content: center;">
+                <img x-show="zoneImages.leftSleeve" :src="zoneImages.leftSleeve" style="max-width: 100%; max-height: 60px;">
+                <span x-show="!zoneImages.leftSleeve && zoneTexts.leftSleeve" x-text="zoneTexts.leftSleeve" style="color: var(--text-secondary);"></span>
+                <span x-show="!zoneImages.leftSleeve && !zoneTexts.leftSleeve" style="color: var(--text-muted);">No design</span>
+              </div>
+            </div>
+            <div style="text-align: center;">
+              <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 8px;">Right Sleeve</div>
+              <div style="background: var(--surface-elevated); padding: 16px; border-radius: 8px; min-height: 80px; display: flex; align-items: center; justify-content: center;">
+                <img x-show="zoneImages.rightSleeve" :src="zoneImages.rightSleeve" style="max-width: 100%; max-height: 60px;">
+                <span x-show="!zoneImages.rightSleeve && zoneTexts.rightSleeve" x-text="zoneTexts.rightSleeve" style="color: var(--text-secondary);"></span>
+                <span x-show="!zoneImages.rightSleeve && !zoneTexts.rightSleeve" style="color: var(--text-muted);">No design</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top: 16px; text-align: center; padding: 12px; background: var(--surface-elevated); border-radius: 8px;">
+            <span style="color: var(--text-muted);">Color:</span> <span :style="'display: inline-block; width: 16px; height: 16px; border-radius: 50%; background:' + color + '; vertical-align: middle; border: 1px solid rgba(255,255,255,0.2);'"></span>
+            <span style="margin-left: 16px; color: var(--text-muted);">Size:</span> <span x-text="size"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="cart-bar">
+        <div class="cart-price">
+          <span class="cart-price-label">Total (<span x-text="quantity"></span>x)</span>
+          <span class="cart-price-value" x-text="'$' + price.toFixed(2)"></span>
+        </div>
+        <button class="add-to-cart-btn" :disabled="!hasDesign" @click="addToCart()">
+          🛒 <span x-text="hasDesign ? 'Add to Cart' : 'Add a design first'"></span>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Section switcher
+    function showSection(section) {
+      // Hide all sections
+      document.querySelectorAll('main > section').forEach(s => s.style.display = 'none');
+      // Show selected
+      document.getElementById(section + '-section').style.display = 'block';
+      // Update nav
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      event.target.classList.add('active');
+    }
+
+    // Global cart state
+    let cart = JSON.parse(localStorage.getItem('customizer_cart') || '[]');
+
+    function updateCartBadge() {
+      const badge = document.getElementById('cart-badge');
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+      if (badge) {
+        badge.textContent = totalItems > 0 ? totalItems : '';
+        badge.style.display = totalItems > 0 ? 'flex' : 'none';
+      }
+    }
+
+    function showCartNotification(product, quantity, price) {
+      const notification = document.getElementById('cart-notification');
+      document.getElementById('notify-product').textContent = product;
+      document.getElementById('notify-details').textContent = `Qty: ${quantity} | $${price.toFixed(2)}`;
+      notification.classList.add('show');
+      setTimeout(() => notification.classList.remove('show'), 3000);
+      updateCartBadge();
+    }
+
+    // Neon Customizer
+    function neonCustomizer() {
+      return {
+        text: '',
+        color: 'pink',
+        font: 'script',
+        size: 'medium',
+        background: 'brick',
+        glow: 50,
+        tab: 'text',
+        quantity: 1,
+        showPreview: false,
+
+        colors: [
+          { id: 'pink', name: 'Pink' },
+          { id: 'blue', name: 'Blue' },
+          { id: 'green', name: 'Green' },
+          { id: 'red', name: 'Red' },
+          { id: 'yellow', name: 'Yellow' },
+          { id: 'white', name: 'White' }
+        ],
+
+        sizes: [
+          { id: 'small', name: 'Small', dimension: '50cm', price: 50 },
+          { id: 'medium', name: 'Medium', dimension: '75cm', price: 80 },
+          { id: 'large', name: 'Large', dimension: '100cm', price: 120 },
+          { id: 'xlarge', name: 'X-Large', dimension: '150cm', price: 180 }
+        ],
+
+        get currentPrice() {
+          const s = this.sizes.find(x => x.id === this.size);
+          return s ? s.price : 80;
+        },
+
+        get totalPrice() {
+          return (this.currentPrice * this.quantity).toFixed(2);
+        },
+
+        addToCart() {
+          if (!this.text.trim()) return;
+
+          const item = {
+            id: Date.now(),
+            type: 'Neon Sign',
+            text: this.text,
+            color: this.color,
+            font: this.font,
+            size: this.sizes.find(x => x.id === this.size)?.name,
+            quantity: this.quantity,
+            unitPrice: this.currentPrice,
+            totalPrice: parseFloat(this.totalPrice)
+          };
+
+          cart.push(item);
+          localStorage.setItem('customizer_cart', JSON.stringify(cart));
+          showCartNotification('Neon Sign', this.quantity, item.totalPrice);
+        }
+      };
+    }
+
+    // Card Customizer
+    function cardCustomizer() {
+      return {
+        designMode: 'upload', // 'upload' or 'text'
+        name: '',
+        title: '',
+        phone: '',
+        email: '',
+        company: '',
+        logoText: '',
+        frontImage: null,
+        backImage: null,
+        isFlipped: false,
+        qty: 500,
+        quantity: 1,
+        isDraggingFront: false,
+        isDraggingBack: false,
+        showPreview: false,
+
+        handleFrontUpload(event) {
+          const file = event.target.files[0];
+          if (file) this.readFile(file, 'front');
+          event.target.value = '';
+        },
+
+        handleBackUpload(event) {
+          const file = event.target.files[0];
+          if (file) this.readFile(file, 'back');
+          event.target.value = '';
+        },
+
+        handleDropFront(event) {
+          this.isDraggingFront = false;
+          const file = event.dataTransfer.files[0];
+          if (file) this.readFile(file, 'front');
+        },
+
+        handleDropBack(event) {
+          this.isDraggingBack = false;
+          const file = event.dataTransfer.files[0];
+          if (file) this.readFile(file, 'back');
+        },
+
+        readFile(file, side) {
+          if (!file.type.startsWith('image/')) return;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            if (side === 'front') this.frontImage = e.target.result;
+            else this.backImage = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        },
+
+        // Load demo sample designs
+        loadDemo() {
+          const demoFront = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="350" height="200" viewBox="0 0 350 200"><rect fill="white" width="350" height="200"/><rect fill="#1a1a2e" x="0" y="0" width="10" height="200"/><text x="30" y="60" fill="#1a1a2e" font-size="24" font-weight="bold" font-family="Arial">John Smith</text><text x="30" y="85" fill="#666" font-size="14" font-family="Arial">Senior Developer</text><text x="30" y="130" fill="#333" font-size="12" font-family="Arial">📞 +1 234 567 890</text><text x="30" y="150" fill="#333" font-size="12" font-family="Arial">✉️ john@company.com</text><text x="30" y="170" fill="#333" font-size="12" font-family="Arial">🌐 www.company.com</text><rect fill="#ff6b35" x="280" y="140" width="50" height="50" rx="8"/><text x="305" y="172" text-anchor="middle" fill="white" font-size="14" font-weight="bold" font-family="Arial">ABC</text></svg>');
+          const demoBack = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="350" height="200" viewBox="0 0 350 200"><rect fill="#1a1a2e" width="350" height="200"/><rect fill="#ff6b35" x="125" y="50" width="100" height="100" rx="16"/><text x="175" y="110" text-anchor="middle" fill="white" font-size="32" font-weight="bold" font-family="Arial">ABC</text><text x="175" y="175" text-anchor="middle" fill="white" font-size="14" font-family="Arial">COMPANY NAME</text></svg>');
+
+          this.frontImage = demoFront;
+          this.backImage = demoBack;
+          this.designMode = 'upload';
+          this.name = 'John Smith';
+          this.title = 'Senior Developer';
+          this.phone = '+1 234 567 890';
+          this.email = 'john@company.com';
+          this.company = 'ABC Company';
+          this.logoText = 'ABC';
+        },
+
+        get unitPrice() {
+          const prices = { 100: 15, 250: 30, 500: 50 };
+          let base = prices[this.qty] || 50;
+          // Add $5 for custom upload design
+          if (this.frontImage || this.backImage) base += 5;
+          return base;
+        },
+
+        get price() {
+          return this.unitPrice * this.quantity;
+        },
+
+        get hasDesign() {
+          if (this.designMode === 'upload') {
+            return this.frontImage || this.backImage;
+          }
+          return this.name.trim() || this.title.trim() || this.phone.trim() || this.email.trim();
+        },
+
+        addToCart() {
+          if (!this.hasDesign) return;
+
+          const item = {
+            id: Date.now(),
+            type: 'Visiting Card',
+            designMode: this.designMode,
+            frontImage: !!this.frontImage,
+            backImage: !!this.backImage,
+            name: this.name,
+            title: this.title,
+            phone: this.phone,
+            email: this.email,
+            company: this.company,
+            cardQty: this.qty,
+            quantity: this.quantity,
+            unitPrice: this.unitPrice,
+            totalPrice: this.price
+          };
+
+          cart.push(item);
+          localStorage.setItem('customizer_cart', JSON.stringify(cart));
+          showCartNotification('Visiting Card', `${this.qty} cards x ${this.quantity}`, this.price);
+        }
+      };
+    }
+
+    // Mug Customizer
+    function mugCustomizer() {
+      return {
+        zone: 'front',
+        // Mug dimensions: Total 7.75" width, 3.75" height
+        zones: {
+          front: { width: '3.125', height: '3.75', label: 'Front Zone' },
+          back: { width: '3.125', height: '3.75', label: 'Back Zone' },
+          rear: { width: '1.5', height: '3.75', label: 'Near Handle' }
+        },
+        zoneImages: { front: null, back: null, rear: null },
+        zoneTexts: { front: '', back: '', rear: '' },
+        isDragging: false,
+        uploadError: null,
+        basePrice: 25,
+        quantity: 1,
+        showPreview: false,
+
+        handleDrop(event) {
+          this.isDragging = false;
+          const files = event.dataTransfer.files;
+          if (files.length > 0) {
+            this.processFile(files[0]);
+          }
+        },
+
+        handleFileSelect(event) {
+          const files = event.target.files;
+          if (files.length > 0) {
+            this.processFile(files[0]);
+          }
+          // Reset input so same file can be selected again
+          event.target.value = '';
+        },
+
+        processFile(file) {
+          this.uploadError = null;
+
+          // Validate file type
+          const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf'];
+          if (!validTypes.includes(file.type)) {
+            this.uploadError = 'Please upload PNG, JPG, or PDF files only.';
+            return;
+          }
+
+          // Validate file size (10MB max)
+          const maxSize = 10 * 1024 * 1024;
+          if (file.size > maxSize) {
+            this.uploadError = 'File size must be less than 10MB.';
+            return;
+          }
+
+          // For PDF, show a placeholder since we can't preview in browser easily
+          if (file.type === 'application/pdf') {
+            this.zoneImages[this.zone] = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect fill="#1a1a2e" width="200" height="200"/><text x="100" y="90" text-anchor="middle" fill="#fff" font-size="40">PDF</text><text x="100" y="120" text-anchor="middle" fill="#a1a1aa" font-size="14">' + file.name.substring(0, 20) + '</text></svg>');
+            return;
+          }
+
+          // Read image file
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            this.zoneImages[this.zone] = e.target.result;
+          };
+          reader.onerror = () => {
+            this.uploadError = 'Failed to read file. Please try again.';
+          };
+          reader.readAsDataURL(file);
+        },
+
+        removeImage() {
+          this.zoneImages[this.zone] = null;
+        },
+
+        // Load demo sample designs
+        loadDemo() {
+          const demoFront = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect fill="#06b6d4" width="200" height="200" rx="10"/><text x="100" y="80" text-anchor="middle" fill="white" font-size="36" font-weight="bold" font-family="Arial">☕</text><text x="100" y="120" text-anchor="middle" fill="white" font-size="20" font-family="Arial">COFFEE</text><text x="100" y="145" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="14" font-family="Arial">LOVER</text></svg>');
+          const demoBack = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect fill="#10b981" width="200" height="200" rx="10"/><text x="100" y="90" text-anchor="middle" fill="white" font-size="18" font-family="Arial">Best</text><text x="100" y="120" text-anchor="middle" fill="white" font-size="24" font-weight="bold" font-family="Arial">MOM</text><text x="100" y="145" text-anchor="middle" fill="white" font-size="18" font-family="Arial">Ever</text></svg>');
+
+          this.zoneImages.front = demoFront;
+          this.zoneImages.back = demoBack;
+          this.zoneTexts.rear = '❤️ 2024';
+          this.zone = 'front';
+        },
+
+        get hasDesign() {
+          return Object.values(this.zoneImages).some(img => img !== null) ||
+                 Object.values(this.zoneTexts).some(txt => txt.trim() !== '');
+        },
+
+        get unitPrice() {
+          let total = this.basePrice;
+          const imageCount = Object.values(this.zoneImages).filter(img => img !== null).length;
+          total += imageCount * 5;
+          const textCount = Object.values(this.zoneTexts).filter(txt => txt.trim() !== '').length;
+          total += textCount * 2;
+          return total;
+        },
+
+        get price() {
+          return this.unitPrice * this.quantity;
+        },
+
+        addToCart() {
+          if (!this.hasDesign) return;
+
+          const item = {
+            id: Date.now(),
+            type: 'Mug (3-Zone)',
+            zones: {
+              front: { image: !!this.zoneImages.front, text: this.zoneTexts.front },
+              back: { image: !!this.zoneImages.back, text: this.zoneTexts.back },
+              rear: { image: !!this.zoneImages.rear, text: this.zoneTexts.rear }
+            },
+            quantity: this.quantity,
+            unitPrice: this.unitPrice,
+            totalPrice: this.price
+          };
+
+          cart.push(item);
+          localStorage.setItem('customizer_cart', JSON.stringify(cart));
+          showCartNotification('Custom Mug', this.quantity, this.price);
+        }
+      };
+    }
+
+    // T-Shirt Customizer
+    function tshirtCustomizer() {
+      return {
+        color: '#1a1a1a',
+        size: 'M',
+        zone: 'front',
+        zones: {
+          front: { label: 'Front' },
+          back: { label: 'Back' },
+          leftSleeve: { label: 'Left Sleeve' },
+          rightSleeve: { label: 'Right Sleeve' }
+        },
+        zoneImages: { front: null, back: null, leftSleeve: null, rightSleeve: null },
+        zoneTexts: { front: '', back: '', leftSleeve: '', rightSleeve: '' },
+        isDragging: false,
+        uploadError: null,
+        basePrice: 29,
+        quantity: 1,
+        showPreview: false,
+
+        handleDrop(event) {
+          this.isDragging = false;
+          const files = event.dataTransfer.files;
+          if (files.length > 0) {
+            this.processFile(files[0]);
+          }
+        },
+
+        handleFileSelect(event) {
+          const files = event.target.files;
+          if (files.length > 0) {
+            this.processFile(files[0]);
+          }
+          event.target.value = '';
+        },
+
+        processFile(file) {
+          this.uploadError = null;
+
+          const validTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+          if (!validTypes.includes(file.type)) {
+            this.uploadError = 'Please upload PNG or JPG files only.';
+            return;
+          }
+
+          const maxSize = 10 * 1024 * 1024;
+          if (file.size > maxSize) {
+            this.uploadError = 'File size must be less than 10MB.';
+            return;
+          }
+
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            this.zoneImages[this.zone] = e.target.result;
+          };
+          reader.onerror = () => {
+            this.uploadError = 'Failed to read file. Please try again.';
+          };
+          reader.readAsDataURL(file);
+        },
+
+        removeImage() {
+          this.zoneImages[this.zone] = null;
+        },
+
+        get hasDesign() {
+          return Object.values(this.zoneImages).some(img => img !== null) ||
+                 Object.values(this.zoneTexts).some(txt => txt.trim() !== '');
+        },
+
+        get unitPrice() {
+          let total = this.basePrice;
+          // $8 per zone with image
+          const imageCount = Object.values(this.zoneImages).filter(img => img !== null).length;
+          total += imageCount * 8;
+          // $3 per zone with text
+          const textCount = Object.values(this.zoneTexts).filter(txt => txt.trim() !== '').length;
+          total += textCount * 3;
+          return total;
+        },
+
+        get price() {
+          return this.unitPrice * this.quantity;
+        },
+
+        // Load demo sample designs
+        loadDemo() {
+          // Demo SVG images as data URLs
+          const demoLogo = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect fill="#ff6b35" width="200" height="200" rx="20"/><text x="100" y="85" text-anchor="middle" fill="white" font-size="48" font-weight="bold" font-family="Arial">DEMO</text><text x="100" y="130" text-anchor="middle" fill="white" font-size="24" font-family="Arial">BRAND</text></svg>');
+          const demoBack = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect fill="#7c3aed" width="200" height="200" rx="20"/><text x="100" y="100" text-anchor="middle" fill="white" font-size="20" font-family="Arial">www.example.com</text><text x="100" y="130" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="14" font-family="Arial">EST. 2024</text></svg>');
+
+          this.zoneImages.front = demoLogo;
+          this.zoneImages.back = demoBack;
+          this.zoneTexts.leftSleeve = 'LOGO';
+          this.zoneTexts.rightSleeve = '2024';
+          this.zone = 'front';
+        },
+
+        addToCart() {
+          if (!this.hasDesign) return;
+
+          const item = {
+            id: Date.now(),
+            type: 'T-Shirt',
+            color: this.color,
+            size: this.size,
+            zones: {
+              front: { image: !!this.zoneImages.front, text: this.zoneTexts.front },
+              back: { image: !!this.zoneImages.back, text: this.zoneTexts.back },
+              leftSleeve: { image: !!this.zoneImages.leftSleeve, text: this.zoneTexts.leftSleeve },
+              rightSleeve: { image: !!this.zoneImages.rightSleeve, text: this.zoneTexts.rightSleeve }
+            },
+            quantity: this.quantity,
+            unitPrice: this.unitPrice,
+            totalPrice: this.price
+          };
+
+          cart.push(item);
+          localStorage.setItem('customizer_cart', JSON.stringify(cart));
+          showCartNotification('Custom T-Shirt', this.quantity, this.price);
+        }
+      };
+    }
+
+    // Initialize cart badge on page load
+    document.addEventListener('DOMContentLoaded', updateCartBadge);
+  </script>
+</body>
+</html>

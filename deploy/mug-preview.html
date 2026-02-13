@@ -1,0 +1,1959 @@
+<!DOCTYPE html>
+<html class="light" lang="en" x-data="{ darkMode: false }" :class="{ 'dark': darkMode }">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+  <title>Mug Designer - Sublimation Plugin Pro</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#308ce8",
+            "background-light": "#f6f7f8",
+            "background-dark": "#111921",
+          },
+          fontFamily: { "display": ["Inter", "sans-serif"] },
+        },
+      },
+    }
+  </script>
+  <style>
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    .toast-enter { animation: slideIn 0.3s ease forwards; }
+    html, body { height: 100%; margin: 0; }
+
+    .editor-grid {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+    @media (min-width: 1024px) {
+      html, body { overflow: hidden; }
+      .editor-grid {
+        display: grid;
+        grid-template-columns: 1fr minmax(320px, 420px);
+        grid-template-rows: 1fr;
+        height: calc(100vh - 57px);
+        overflow: hidden;
+        min-height: 0;
+      }
+    }
+
+    .product-canvas {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      padding: clamp(0.5rem, 2vw, 2rem);
+      min-height: 0;
+      position: relative;
+      height: 55vh;
+      height: 55dvh;
+      flex-shrink: 0;
+    }
+    @media (min-width: 1024px) {
+      .product-canvas { height: auto; flex-shrink: unset; }
+    }
+
+    .controls-panel {
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      flex: 1;
+    }
+    @media (min-width: 1024px) { .controls-panel { flex: none; } }
+
+    .canvas-wrapper canvas { cursor: grab; }
+    .canvas-wrapper canvas:active { cursor: grabbing; }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-[#111418] dark:text-white antialiased">
+
+  <div x-data="mugDesigner()" x-init="init()" class="relative flex h-screen w-full flex-col overflow-hidden">
+
+    <!-- Toast -->
+    <div x-show="showToast" x-transition class="fixed top-4 right-4 z-50 bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 flex items-center gap-3 border border-gray-200 dark:border-gray-700">
+      <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+        <span class="material-symbols-outlined text-green-600">check_circle</span>
+      </div>
+      <div>
+        <p class="font-bold text-sm" x-text="toastMessage"></p>
+        <p class="text-xs text-gray-500" x-text="toastSub"></p>
+      </div>
+    </div>
+
+    <!-- Header -->
+    <header class="flex items-center justify-between border-b border-[#e5e7eb] dark:border-[#2d3748] bg-white dark:bg-[#1a222c] px-3 md:px-6 py-2 md:py-3 flex-shrink-0 z-40">
+      <div class="flex items-center gap-2 md:gap-4">
+        <span class="material-symbols-outlined text-3xl md:text-4xl text-primary">coffee</span>
+        <div class="flex flex-col">
+          <h2 class="text-sm md:text-lg font-bold">Mug Designer</h2>
+          <span class="text-[10px] md:text-xs text-gray-500 hidden sm:block">Sublimation Plugin Pro</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-1 md:gap-3">
+        <!-- Export Dropdown -->
+        <div class="relative" x-data="{ open: false }">
+          <button @click="open = !open" class="flex items-center gap-1 px-2 md:px-4 py-1.5 md:py-2 bg-gray-100 dark:bg-gray-700 rounded-lg font-bold text-xs md:text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+            <span class="material-symbols-outlined text-lg">download</span>
+            <span class="hidden md:inline">Export</span>
+          </button>
+          <div x-show="open" @click.away="open = false" x-transition class="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
+            <button @click="exportAs('png'); open = false" class="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3">
+              <span class="material-symbols-outlined text-lg text-blue-500">image</span> Export PNG
+            </button>
+            <button @click="exportAs('jpeg'); open = false" class="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3">
+              <span class="material-symbols-outlined text-lg text-green-500">photo</span> Export JPEG
+            </button>
+            <button @click="exportAs('pdf'); open = false" class="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3">
+              <span class="material-symbols-outlined text-lg text-red-500">picture_as_pdf</span> Export PDF
+            </button>
+          </div>
+        </div>
+        <button @click="showPreviewModal = true" class="flex items-center gap-1 px-2 md:px-4 py-1.5 md:py-2 bg-gray-100 dark:bg-gray-700 rounded-lg font-bold text-xs md:text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+          <span class="material-symbols-outlined text-lg">preview</span>
+          <span class="hidden md:inline">Preview All</span>
+        </button>
+        <button @click="darkMode = !darkMode" class="p-1.5 md:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
+          <span class="material-symbols-outlined text-xl" x-text="darkMode ? 'light_mode' : 'dark_mode'"></span>
+        </button>
+        <button @click="addToCart()" :disabled="!canAddToCart"
+                :class="canAddToCart ? 'bg-primary hover:bg-primary/90' : 'bg-gray-300 cursor-not-allowed'"
+                class="flex items-center gap-1 px-3 md:px-5 py-1.5 md:py-2.5 text-white rounded-lg font-bold text-xs md:text-sm">
+          <span class="material-symbols-outlined text-lg">shopping_cart</span>
+          <span class="hidden sm:inline">Add to Cart</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="editor-grid">
+      <!-- Canvas Preview -->
+      <section class="product-canvas bg-[#f0f2f4] dark:bg-[#0d131a] flex-col">
+
+        <!-- Zone Tabs -->
+        <div x-show="selectedMugType !== 'fullwrap'" class="absolute top-3 md:top-6 left-1/2 -translate-x-1/2 flex bg-white dark:bg-gray-800 rounded-full p-0.5 md:p-1 shadow-lg z-10">
+          <template x-for="zone in activeZones" :key="zone.id">
+            <button @click="switchZone(zone.id)"
+                    :class="currentZone === zone.id ? 'bg-primary text-white' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'"
+                    class="px-2.5 md:px-4 py-1.5 md:py-2 rounded-full text-xs md:text-sm font-medium transition-all flex items-center gap-1 md:gap-2">
+              <span x-text="zone.label"></span>
+              <span x-show="zoneHasContent(zone.id)" class="w-2 h-2 bg-green-500 rounded-full"></span>
+            </button>
+          </template>
+        </div>
+        <div x-show="selectedMugType === 'fullwrap'" class="absolute top-3 md:top-6 left-1/2 -translate-x-1/2 bg-white dark:bg-gray-800 rounded-full px-4 py-2 shadow-lg z-10">
+          <span class="text-xs md:text-sm font-medium text-primary flex items-center gap-2">
+            <span class="material-symbols-outlined text-lg">panorama</span>
+            Full Wrap (7.75" x 3.75")
+          </span>
+        </div>
+
+        <!-- Mug Canvas -->
+        <div class="relative" :style="{ transform: `scale(${zoomLevel})`, transformOrigin: 'center center' }">
+          <div class="canvas-wrapper">
+            <canvas id="mugCanvas" width="600" height="500"></canvas>
+          </div>
+        </div>
+
+        <!-- Bottom Toolbar -->
+        <div class="absolute bottom-16 md:bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-white dark:bg-gray-800 px-2 py-1.5 rounded-full shadow-lg z-10">
+          <button @click="zoomLevel = Math.max(0.5, zoomLevel - 0.1)" class="w-8 h-8 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700" title="Zoom Out">
+            <span class="material-symbols-outlined text-lg">remove</span>
+          </button>
+          <span class="text-xs font-medium w-10 text-center" x-text="Math.round(zoomLevel * 100) + '%'"></span>
+          <button @click="zoomLevel = Math.min(1.5, zoomLevel + 0.1)" class="w-8 h-8 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700" title="Zoom In">
+            <span class="material-symbols-outlined text-lg">add</span>
+          </button>
+          <div class="w-px h-5 bg-gray-300 dark:bg-gray-600 mx-1"></div>
+          <button @click="zoomLevel = 1" class="w-8 h-8 rounded-full flex items-center justify-center text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700" title="Reset Zoom">
+            <span class="material-symbols-outlined text-lg">fit_screen</span>
+          </button>
+        </div>
+
+        <!-- Zone Thumbnails -->
+        <div x-show="selectedMugType !== 'fullwrap'" class="absolute bottom-6 right-3 md:right-6 flex gap-2 z-10">
+          <template x-for="zone in activeZones" :key="zone.id">
+            <button @click="switchZone(zone.id)"
+                    :class="currentZone === zone.id ? 'ring-2 ring-primary' : 'opacity-70 hover:opacity-100'"
+                    class="w-14 h-18 md:w-16 md:h-20 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-1 flex flex-col items-center justify-center transition-all">
+              <canvas :id="'thumb_' + zone.id" width="48" height="40" class="rounded mb-1"></canvas>
+              <span class="text-[10px] font-medium" x-text="zone.label"></span>
+            </button>
+          </template>
+        </div>
+      </section>
+
+      <!-- Controls Panel -->
+      <aside class="controls-panel bg-white dark:bg-[#1a222c] border-l border-gray-200 dark:border-gray-700 flex flex-col">
+        <!-- Tabs -->
+        <div class="flex border-b border-gray-200 dark:border-gray-700">
+          <button @click="activeTab = 'design'" :class="activeTab === 'design' ? 'border-b-2 border-primary text-primary font-bold' : 'text-gray-500'" class="flex-1 py-4 text-sm">Design</button>
+          <button @click="activeTab = 'layers'" :class="activeTab === 'layers' ? 'border-b-2 border-primary text-primary font-bold' : 'text-gray-500'" class="flex-1 py-4 text-sm">Layers</button>
+          <button @click="activeTab = 'settings'" :class="activeTab === 'settings' ? 'border-b-2 border-primary text-primary font-bold' : 'text-gray-500'" class="flex-1 py-4 text-sm">Settings</button>
+          <button @click="activeTab = 'pricing'" :class="activeTab === 'pricing' ? 'border-b-2 border-primary text-primary font-bold' : 'text-gray-500'" class="flex-1 py-4 text-sm">Price</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-4 md:p-6">
+
+          <!-- ===== DESIGN TAB ===== -->
+          <template x-if="activeTab === 'design'">
+            <div class="space-y-6">
+              <!-- Zone Indicator -->
+              <div class="bg-primary/10 rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <p class="text-xs text-primary font-medium uppercase" x-text="selectedMugType === 'fullwrap' ? 'Full Wrap Mode' : 'Editing Zone'"></p>
+                  <p class="text-lg font-bold" x-text="activeZones.find(z => z.id === currentZone)?.label || currentZone"></p>
+                  <p class="text-xs text-gray-500" x-text="(activeZones.find(z => z.id === currentZone)?.width || '') + ' x ' + (activeZones.find(z => z.id === currentZone)?.height || '')"></p>
+                </div>
+                <div x-show="selectedMugType !== 'fullwrap'" class="flex gap-1">
+                  <template x-for="zone in activeZones" :key="zone.id">
+                    <button @click="switchZone(zone.id)"
+                            :class="currentZone === zone.id ? 'bg-primary text-white' : 'bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300'"
+                            class="w-8 h-8 rounded-full text-xs font-bold" x-text="zone.label.charAt(0)"></button>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Upload Image -->
+              <div>
+                <h3 class="text-sm font-bold mb-3 flex items-center gap-2">
+                  <span class="bg-primary/10 text-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">1</span>
+                  Upload Image
+                </h3>
+                <div @click="$refs.fileInput.click()"
+                     @dragover.prevent="isDragOver = true"
+                     @dragleave.prevent="isDragOver = false"
+                     @drop.prevent="handleDrop($event)"
+                     :class="isDragOver ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-600'"
+                     class="border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:border-primary transition-all">
+                  <template x-if="!getCurrentImage()">
+                    <div class="text-center">
+                      <span class="material-symbols-outlined text-3xl text-gray-400 mb-2">cloud_upload</span>
+                      <p class="text-sm font-medium">Drop image here or click to upload</p>
+                      <p class="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
+                    </div>
+                  </template>
+                  <template x-if="getCurrentImage()">
+                    <div class="text-center">
+                      <img :src="getCurrentImage()" class="max-h-24 mx-auto rounded-lg mb-2" alt="Design">
+                      <p class="text-sm text-green-600 font-medium">Image uploaded!</p>
+                    </div>
+                  </template>
+                </div>
+                <input x-ref="fileInput" type="file" @change="handleFileUpload($event)" accept="image/png,image/jpeg,image/webp" class="hidden">
+                <template x-if="getCurrentImage()">
+                  <div class="mt-3 space-y-3">
+                    <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 space-y-3">
+                      <div>
+                        <label class="text-xs font-medium text-gray-500 mb-1 block">Scale</label>
+                        <div class="flex items-center gap-2">
+                          <input type="range" min="10" max="200" :value="getImageLayer()?.scalePercent || 100"
+                                 @input="updateImageProp('scalePercent', parseInt($event.target.value))" class="flex-1 accent-primary">
+                          <span class="text-xs font-mono w-10 text-right" x-text="(getImageLayer()?.scalePercent || 100) + '%'"></span>
+                        </div>
+                      </div>
+                      <div>
+                        <label class="text-xs font-medium text-gray-500 mb-1 block">Rotation</label>
+                        <div class="flex items-center gap-2">
+                          <input type="range" min="-180" max="180" :value="getImageLayer()?.rotation || 0"
+                                 @input="updateImageProp('rotation', parseInt($event.target.value))" class="flex-1 accent-primary">
+                          <span class="text-xs font-mono w-12 text-right" x-text="(getImageLayer()?.rotation || 0) + '°'"></span>
+                        </div>
+                      </div>
+                      <div>
+                        <label class="text-xs font-medium text-gray-500 mb-1 block">Image Fit</label>
+                        <div class="flex gap-2">
+                          <button @click="updateImageProp('fitMode', 'contain')"
+                                  :class="(getImageLayer()?.fitMode || 'cover') === 'contain' ? 'bg-primary text-white' : 'border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
+                                  class="flex-1 py-2 text-xs font-medium rounded-lg flex items-center justify-center gap-1">
+                            <span class="material-symbols-outlined text-sm">fit_screen</span> Contain
+                          </button>
+                          <button @click="updateImageProp('fitMode', 'cover')"
+                                  :class="(getImageLayer()?.fitMode || 'cover') === 'cover' ? 'bg-primary text-white' : 'border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
+                                  class="flex-1 py-2 text-xs font-medium rounded-lg flex items-center justify-center gap-1">
+                            <span class="material-symbols-outlined text-sm">aspect_ratio</span> Fill/Cover
+                          </button>
+                        </div>
+                      </div>
+                      <div class="flex gap-2">
+                        <button @click="flipImageLayer('h')" class="flex-1 py-2 text-xs font-medium border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center gap-1">
+                          <span class="material-symbols-outlined text-sm">flip</span> Flip H
+                        </button>
+                        <button @click="flipImageLayer('v')" class="flex-1 py-2 text-xs font-medium border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center gap-1">
+                          <span class="material-symbols-outlined text-sm" style="transform:rotate(90deg)">flip</span> Flip V
+                        </button>
+                        <button @click="centerImageLayer()" class="flex-1 py-2 text-xs font-medium border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center gap-1">
+                          <span class="material-symbols-outlined text-sm">center_focus_strong</span> Center
+                        </button>
+                      </div>
+                    </div>
+                    <button @click="removeCurrentImage()" class="w-full py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
+                      <span class="material-symbols-outlined text-sm align-middle mr-1">delete</span> Remove Image
+                    </button>
+                  </div>
+                </template>
+              </div>
+
+              <!-- Add Text -->
+              <div>
+                <h3 class="text-sm font-bold mb-3 flex items-center gap-2">
+                  <span class="bg-primary/10 text-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">2</span>
+                  Add Text Layer
+                </h3>
+                <div class="flex gap-2 mb-3">
+                  <input x-model="textInput" @keyup.enter="addTextLayer()"
+                         class="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-800 rounded-lg text-sm focus:ring-2 focus:ring-primary outline-none"
+                         placeholder="Enter text..." maxlength="50">
+                  <button @click="addTextLayer()" class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90">Add</button>
+                </div>
+                <!-- List of added text layers with delete option -->
+                <template x-if="getCurrentLayers().filter(l => l.type === 'text').length > 0">
+                  <div class="mb-3 space-y-1.5">
+                    <label class="text-xs font-medium text-gray-500 block">Added Texts</label>
+                    <template x-for="layer in getCurrentLayers().filter(l => l.type === 'text')" :key="layer.id">
+                      <div @click="selectLayer(layer.id)"
+                           :class="selectedLayerId === layer.id ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-600 hover:border-primary/50'"
+                           class="flex items-center justify-between border rounded-lg px-3 py-2 cursor-pointer transition-all">
+                        <div class="flex items-center gap-2 min-w-0">
+                          <span class="material-symbols-outlined text-sm text-purple-500">text_fields</span>
+                          <span class="text-sm font-medium truncate" x-text="layer.content"></span>
+                        </div>
+                        <div class="flex items-center gap-1 flex-shrink-0">
+                          <button @click.stop="toggleLayerVisibility(layer.id)" class="w-7 h-7 rounded flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700" title="Show/Hide">
+                            <span class="material-symbols-outlined text-sm" x-text="layer.visible ? 'visibility' : 'visibility_off'"
+                                  :class="layer.visible ? 'text-gray-500' : 'text-gray-400'"></span>
+                          </button>
+                          <button @click.stop="deleteLayer(layer.id)" class="w-7 h-7 rounded flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500" title="Delete text">
+                            <span class="material-symbols-outlined text-sm">delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    </template>
+                  </div>
+                </template>
+
+                <template x-if="getSelectedLayer()?.type === 'text'">
+                  <div class="space-y-3 bg-gray-50 dark:bg-gray-800 rounded-lg p-3">
+                    <!-- Bold / Italic / Color -->
+                    <div class="flex gap-2">
+                      <button @click="toggleTextStyle('bold')"
+                              :class="getSelectedLayer()?.bold ? 'bg-primary text-white' : 'border border-gray-200 dark:border-gray-600'"
+                              class="flex-1 h-9 rounded-lg flex items-center justify-center">
+                        <span class="material-symbols-outlined text-lg">format_bold</span>
+                      </button>
+                      <button @click="toggleTextStyle('italic')"
+                              :class="getSelectedLayer()?.italic ? 'bg-primary text-white' : 'border border-gray-200 dark:border-gray-600'"
+                              class="flex-1 h-9 rounded-lg flex items-center justify-center">
+                        <span class="material-symbols-outlined text-lg">format_italic</span>
+                      </button>
+                      <div class="flex-1 relative">
+                        <input type="color" :value="getSelectedLayer()?.color || '#ffffff'" @input="updateTextColor($event.target.value)" class="w-full h-9 rounded-lg cursor-pointer border-0">
+                      </div>
+                    </div>
+
+                    <!-- Text Orientation -->
+                    <div>
+                      <label class="text-xs font-medium text-gray-500 mb-1 block">Text Direction</label>
+                      <div class="flex gap-1.5">
+                        <button @click="setTextOrientation(0)" title="Horizontal"
+                                :class="(getSelectedLayer()?.rotation || 0) === 0 ? 'bg-primary text-white' : 'border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
+                                class="flex-1 h-9 rounded-lg flex items-center justify-center text-xs font-medium gap-1">
+                          <span class="material-symbols-outlined text-sm">text_rotation_none</span> Straight
+                        </button>
+                        <button @click="setTextOrientation(-90)" title="Vertical Up"
+                                :class="(getSelectedLayer()?.rotation || 0) === -90 ? 'bg-primary text-white' : 'border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
+                                class="flex-1 h-9 rounded-lg flex items-center justify-center text-xs font-medium gap-1">
+                          <span class="material-symbols-outlined text-sm">text_rotate_vertical</span> Up
+                        </button>
+                        <button @click="setTextOrientation(90)" title="Vertical Down"
+                                :class="(getSelectedLayer()?.rotation || 0) === 90 ? 'bg-primary text-white' : 'border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
+                                class="flex-1 h-9 rounded-lg flex items-center justify-center text-xs font-medium gap-1">
+                          <span class="material-symbols-outlined text-sm" style="transform:scaleX(-1)">text_rotate_vertical</span> Down
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- Custom Rotation -->
+                    <div>
+                      <label class="text-xs font-medium text-gray-500 mb-1 block">Custom Angle</label>
+                      <div class="flex items-center gap-2">
+                        <input type="range" min="-180" max="180" :value="getSelectedLayer()?.rotation || 0"
+                               @input="updateLayerRotation($event.target.value)" class="flex-1 accent-primary">
+                        <span class="text-xs font-mono w-12 text-right" x-text="(getSelectedLayer()?.rotation || 0) + '°'"></span>
+                      </div>
+                    </div>
+
+                    <!-- Text Position Presets -->
+                    <div>
+                      <label class="text-xs font-medium text-gray-500 mb-1.5 block">Position Preset</label>
+                      <div class="grid grid-cols-3 gap-1">
+                        <button @click="setTextPosition(0.2, 0.15)" title="Top Left"
+                                class="h-7 rounded border border-gray-200 dark:border-gray-600 hover:bg-primary hover:text-white text-[10px] font-medium transition-colors">TL</button>
+                        <button @click="setTextPosition(0.5, 0.15)" title="Top Center"
+                                class="h-7 rounded border border-gray-200 dark:border-gray-600 hover:bg-primary hover:text-white text-[10px] font-medium transition-colors">TC</button>
+                        <button @click="setTextPosition(0.8, 0.15)" title="Top Right"
+                                class="h-7 rounded border border-gray-200 dark:border-gray-600 hover:bg-primary hover:text-white text-[10px] font-medium transition-colors">TR</button>
+                        <button @click="setTextPosition(0.2, 0.5)" title="Middle Left"
+                                class="h-7 rounded border border-gray-200 dark:border-gray-600 hover:bg-primary hover:text-white text-[10px] font-medium transition-colors">ML</button>
+                        <button @click="setTextPosition(0.5, 0.5)" title="Center"
+                                class="h-7 rounded bg-gray-200 dark:bg-gray-600 hover:bg-primary hover:text-white text-[10px] font-bold transition-colors">C</button>
+                        <button @click="setTextPosition(0.8, 0.5)" title="Middle Right"
+                                class="h-7 rounded border border-gray-200 dark:border-gray-600 hover:bg-primary hover:text-white text-[10px] font-medium transition-colors">MR</button>
+                        <button @click="setTextPosition(0.2, 0.85)" title="Bottom Left"
+                                class="h-7 rounded border border-gray-200 dark:border-gray-600 hover:bg-primary hover:text-white text-[10px] font-medium transition-colors">BL</button>
+                        <button @click="setTextPosition(0.5, 0.85)" title="Bottom Center"
+                                class="h-7 rounded border border-gray-200 dark:border-gray-600 hover:bg-primary hover:text-white text-[10px] font-medium transition-colors">BC</button>
+                        <button @click="setTextPosition(0.8, 0.85)" title="Bottom Right"
+                                class="h-7 rounded border border-gray-200 dark:border-gray-600 hover:bg-primary hover:text-white text-[10px] font-medium transition-colors">BR</button>
+                      </div>
+                      <p class="text-[10px] text-gray-400 mt-1">Or drag text directly on the mug</p>
+                    </div>
+
+                    <!-- Font Size -->
+                    <div>
+                      <label class="text-xs font-medium text-gray-500 mb-1 block">Font Size</label>
+                      <div class="flex items-center gap-2">
+                        <input type="range" min="12" max="72" :value="getSelectedLayer()?.fontSize || 32"
+                               @input="updateFontSize($event.target.value)" class="flex-1 accent-primary">
+                        <span class="text-xs font-mono w-10 text-right" x-text="(getSelectedLayer()?.fontSize || 32) + 'px'"></span>
+                      </div>
+                    </div>
+
+                    <!-- Text Outline / Stroke -->
+                    <div>
+                      <label class="text-xs font-medium text-gray-500 mb-1 block">Text Outline</label>
+                      <div class="flex gap-2 items-center">
+                        <button @click="toggleTextStroke()"
+                                :class="getSelectedLayer()?.stroke ? 'bg-primary text-white' : 'border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300'"
+                                class="flex-1 h-9 rounded-lg flex items-center justify-center text-xs font-medium gap-1">
+                          <span class="material-symbols-outlined text-sm">border_color</span>
+                          <span x-text="getSelectedLayer()?.stroke ? 'Outline ON' : 'Outline OFF'"></span>
+                        </button>
+                        <template x-if="getSelectedLayer()?.stroke">
+                          <input type="color" :value="getSelectedLayer()?.strokeColor || '#000000'" @input="updateStrokeColor($event.target.value)" class="w-9 h-9 rounded-lg cursor-pointer border-0">
+                        </template>
+                      </div>
+                    </div>
+
+                    <!-- Font Family -->
+                    <div>
+                      <label class="text-xs font-medium text-gray-500 mb-1 block">Font Family</label>
+                      <select @change="updateFontFamily($event.target.value)" :value="getSelectedLayer()?.fontFamily || 'Inter'"
+                              class="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 rounded-lg text-sm">
+                        <option value="Inter">Inter</option>
+                        <option value="Arial">Arial</option>
+                        <option value="Georgia">Georgia</option>
+                        <option value="Courier New">Courier New</option>
+                        <option value="Times New Roman">Times New Roman</option>
+                        <option value="Verdana">Verdana</option>
+                        <option value="Impact">Impact</option>
+                      </select>
+                    </div>
+                  </div>
+                </template>
+              </div>
+
+              <!-- Mug Body Color -->
+              <div>
+                <h3 class="text-sm font-bold mb-3 flex items-center gap-2">
+                  <span class="bg-primary/10 text-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">3</span>
+                  Mug Body Color
+                </h3>
+                <div class="flex flex-wrap gap-3">
+                  <template x-for="color in colors" :key="color.value">
+                    <button @click="selectedColor = color.value; renderCanvas()"
+                            :title="color.name"
+                            :class="selectedColor === color.value ? 'ring-2 ring-primary ring-offset-2' : 'border border-gray-200 dark:border-gray-600'"
+                            :style="{ backgroundColor: color.value }"
+                            class="size-10 rounded-full transition-all hover:scale-110"></button>
+                  </template>
+                </div>
+              </div>
+
+              <!-- Handle / Inner Color -->
+              <div>
+                <h3 class="text-sm font-bold mb-3 flex items-center gap-2">
+                  <span class="bg-primary/10 text-primary w-6 h-6 rounded-full flex items-center justify-center text-xs">4</span>
+                  Handle &amp; Inner Color
+                </h3>
+                <div class="flex flex-wrap gap-3">
+                  <template x-for="color in handleColors" :key="color.value">
+                    <button @click="selectedHandleColor = color.value; renderCanvas()"
+                            :title="color.name"
+                            :class="selectedHandleColor === color.value ? 'ring-2 ring-primary ring-offset-2' : 'border border-gray-200 dark:border-gray-600'"
+                            :style="{ backgroundColor: color.value }"
+                            class="size-10 rounded-full transition-all hover:scale-110"></button>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- ===== LAYERS TAB ===== -->
+          <template x-if="activeTab === 'layers'">
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold">Layers - <span x-text="activeZones.find(z=>z.id===currentZone)?.label" class="text-primary"></span></h3>
+                <span class="text-xs text-gray-500" x-text="getCurrentLayers().length + ' layer(s)'"></span>
+              </div>
+              <template x-if="getCurrentLayers().length === 0">
+                <div class="text-center py-8 text-gray-400">
+                  <span class="material-symbols-outlined text-4xl mb-2">layers_clear</span>
+                  <p class="text-sm">No layers yet</p>
+                </div>
+              </template>
+              <div class="space-y-2">
+                <template x-for="(layer, index) in getCurrentLayers()" :key="layer.id">
+                  <div @click="selectLayer(layer.id)"
+                       :class="selectedLayerId === layer.id ? 'border-primary bg-primary/5' : 'border-gray-200 dark:border-gray-600'"
+                       class="border-2 rounded-lg p-3 cursor-pointer transition-all hover:border-primary/50">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-lg" x-text="layer.type === 'image' ? 'image' : 'text_fields'"
+                              :class="layer.type === 'image' ? 'text-blue-500' : 'text-purple-500'"></span>
+                        <div>
+                          <p class="text-sm font-medium" x-text="layer.type === 'image' ? 'Image' : layer.content"></p>
+                          <p class="text-xs text-gray-500" x-text="layer.type + ' layer'"></p>
+                        </div>
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <button @click.stop="toggleLayerVisibility(layer.id)" class="w-7 h-7 rounded flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700">
+                          <span class="material-symbols-outlined text-sm" x-text="layer.visible ? 'visibility' : 'visibility_off'"
+                                :class="layer.visible ? 'text-gray-600' : 'text-gray-400'"></span>
+                        </button>
+                        <button @click.stop="moveLayer(layer.id, 'up')" :disabled="index === 0" class="w-7 h-7 rounded flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30">
+                          <span class="material-symbols-outlined text-sm">arrow_upward</span>
+                        </button>
+                        <button @click.stop="moveLayer(layer.id, 'down')" :disabled="index === getCurrentLayers().length - 1" class="w-7 h-7 rounded flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 disabled:opacity-30">
+                          <span class="material-symbols-outlined text-sm">arrow_downward</span>
+                        </button>
+                        <button @click.stop="deleteLayer(layer.id)" class="w-7 h-7 rounded flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-900/20 text-red-500">
+                          <span class="material-symbols-outlined text-sm">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+              <!-- All Zones Summary -->
+              <div x-show="selectedMugType !== 'fullwrap'" class="bg-gray-50 dark:bg-gray-800 rounded-xl p-4 mt-6">
+                <h3 class="text-sm font-bold mb-3">All Zones Summary</h3>
+                <div class="space-y-2">
+                  <template x-for="zone in activeZones" :key="zone.id">
+                    <div class="flex items-center justify-between p-2 bg-white dark:bg-gray-700 rounded-lg">
+                      <div class="flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm"
+                              x-text="zoneHasContent(zone.id) ? 'check_circle' : 'radio_button_unchecked'"
+                              :class="zoneHasContent(zone.id) ? 'text-green-500' : 'text-gray-400'"></span>
+                        <span class="text-sm font-medium" x-text="zone.label"></span>
+                      </div>
+                      <button @click="switchZone(zone.id)" class="text-primary text-xs font-medium">Edit</button>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- ===== SETTINGS TAB ===== -->
+          <template x-if="activeTab === 'settings'">
+            <div class="space-y-6">
+              <div>
+                <h3 class="text-sm font-bold mb-3">Mug Type</h3>
+                <div class="space-y-2">
+                  <template x-for="type in mugTypes" :key="type.value">
+                    <button @click="switchMugType(type.value)"
+                            :class="selectedMugType === type.value ? 'border-primary bg-primary/10' : 'border-gray-200 dark:border-gray-600'"
+                            class="w-full p-3 border-2 rounded-lg text-left flex items-center gap-3 transition-all">
+                      <span class="material-symbols-outlined" x-text="type.icon"></span>
+                      <div>
+                        <div class="font-medium text-sm" x-text="type.label"></div>
+                        <div class="text-xs text-gray-500" x-text="type.description"></div>
+                      </div>
+                    </button>
+                  </template>
+                </div>
+              </div>
+              <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
+                <h4 class="font-bold text-blue-700 dark:text-blue-400 mb-3 flex items-center gap-2">
+                  <span class="material-symbols-outlined">straighten</span> Print Dimensions
+                </h4>
+                <div class="grid grid-cols-2 gap-2">
+                  <div class="bg-white dark:bg-gray-800 rounded-lg p-3 text-center">
+                    <div class="text-xl font-black text-primary">7.75"</div>
+                    <div class="text-xs text-gray-500">Total Width</div>
+                  </div>
+                  <div class="bg-white dark:bg-gray-800 rounded-lg p-3 text-center">
+                    <div class="text-xl font-black text-primary">3.75"</div>
+                    <div class="text-xs text-gray-500">Height</div>
+                  </div>
+                </div>
+              </div>
+              <div class="space-y-3">
+                <h3 class="text-sm font-bold">Display Options</h3>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm">Show Print Safe Zone</span>
+                  <button @click="showSafeZone = !showSafeZone; renderCanvas()" :class="showSafeZone ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'" class="w-10 h-5 rounded-full relative transition-colors">
+                    <div :class="showSafeZone ? 'right-1' : 'left-1'" class="absolute top-1 size-3 bg-white rounded-full transition-all"></div>
+                  </button>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm">Show Grid</span>
+                  <button @click="showGrid = !showGrid; renderCanvas()" :class="showGrid ? 'bg-primary' : 'bg-gray-300 dark:bg-gray-600'" class="w-10 h-5 rounded-full relative transition-colors">
+                    <div :class="showGrid ? 'right-1' : 'left-1'" class="absolute top-1 size-3 bg-white rounded-full transition-all"></div>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </template>
+
+          <!-- ===== PRICING TAB ===== -->
+          <template x-if="activeTab === 'pricing'">
+            <div class="space-y-6">
+              <h3 class="font-bold">Price Breakdown</h3>
+              <div class="space-y-2">
+                <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700"><span class="text-gray-600 dark:text-gray-400">Base Mug</span><span class="font-medium">$15.99</span></div>
+                <template x-if="selectedMugType === 'heart'">
+                  <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700"><span class="text-gray-600 dark:text-gray-400">Heart Handle</span><span class="font-medium">+$2.50</span></div>
+                </template>
+                <template x-if="getDesignCount() > 0">
+                  <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700">
+                    <span class="text-gray-600 dark:text-gray-400">Custom Print (<span x-text="getDesignCount()"></span> zones)</span>
+                    <span class="font-medium">+$<span x-text="(getDesignCount() * 3).toFixed(2)"></span></span>
+                  </div>
+                </template>
+                <template x-if="selectedColor !== '#ffffff'">
+                  <div class="flex justify-between py-2 border-b border-gray-100 dark:border-gray-700"><span class="text-gray-600 dark:text-gray-400">Colored Mug</span><span class="font-medium">+$1.50</span></div>
+                </template>
+              </div>
+              <div class="flex justify-between py-3 bg-gray-50 dark:bg-gray-800 rounded-lg px-4">
+                <span class="font-bold">Total</span>
+                <span class="font-bold text-primary text-xl">$<span x-text="totalPrice.toFixed(2)"></span></span>
+              </div>
+              <div>
+                <h4 class="font-bold mb-2">Quantity</h4>
+                <div class="flex items-center gap-4">
+                  <button @click="quantity = Math.max(1, quantity - 1)" class="w-10 h-10 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700"><span class="material-symbols-outlined">remove</span></button>
+                  <input type="number" x-model.number="quantity" min="1" class="w-20 text-center py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-800 rounded-lg">
+                  <button @click="quantity++" class="w-10 h-10 border border-gray-200 dark:border-gray-600 rounded-lg flex items-center justify-center hover:bg-gray-50 dark:hover:bg-gray-700"><span class="material-symbols-outlined">add</span></button>
+                </div>
+              </div>
+            </div>
+          </template>
+        </div>
+
+        <!-- Footer -->
+        <div class="p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-[#111921]">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <span class="text-sm text-gray-500">Total (<span x-text="quantity"></span> item<span x-show="quantity > 1">s</span>)</span>
+              <div class="text-2xl font-black text-primary">$<span x-text="(totalPrice * quantity).toFixed(2)"></span></div>
+            </div>
+            <div class="text-right">
+              <span x-show="canAddToCart" class="text-xs font-bold text-green-500 uppercase">Ready to Print</span>
+              <span x-show="!canAddToCart" class="text-xs font-bold text-orange-500 uppercase">Add a design</span>
+            </div>
+          </div>
+          <button @click="addToCart()" :disabled="!canAddToCart"
+                  :class="canAddToCart ? 'bg-primary hover:shadow-lg hover:bg-primary/90' : 'bg-gray-300 dark:bg-gray-600 cursor-not-allowed'"
+                  class="w-full py-4 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all">
+            <span class="material-symbols-outlined">shopping_bag</span>
+            <span x-text="canAddToCart ? 'Add to Basket' : 'Add a design first'"></span>
+          </button>
+        </div>
+      </aside>
+    </main>
+
+    <!-- ===== PREVIEW ALL MODAL ===== -->
+    <div x-show="showPreviewModal" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+         class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 md:p-6" @click.self="showPreviewModal = false">
+      <div class="bg-white dark:bg-[#1a222c] rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
+        <div class="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">
+          <div>
+            <h3 class="text-lg font-bold">Preview All Zones</h3>
+            <p class="text-sm text-gray-500" x-text="mugTypes.find(m=>m.value===selectedMugType)?.label"></p>
+          </div>
+          <button @click="showPreviewModal = false" class="w-9 h-9 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-600">
+            <span class="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <div class="p-4 md:p-6">
+          <!-- 3D Mug preview for each zone -->
+          <div class="rounded-xl overflow-hidden bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-4 md:p-6">
+            <div class="flex justify-center items-end gap-2 md:gap-6">
+              <canvas id="preview_mug_front" width="400" height="475" class="w-[32%] max-w-[360px]"></canvas>
+              <canvas id="preview_mug_rear" width="400" height="475" class="w-[32%] max-w-[360px]"></canvas>
+              <canvas id="preview_mug_back" width="400" height="475" class="w-[32%] max-w-[360px]"></canvas>
+            </div>
+          </div>
+          <!-- Zone labels & edit buttons -->
+          <div class="mt-4" :class="selectedMugType === 'fullwrap' ? '' : 'grid grid-cols-3 gap-4'">
+            <template x-for="zone in activeZones" :key="zone.id">
+              <div class="flex flex-col items-center">
+                <div class="flex items-center gap-1.5 mb-2">
+                  <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold"
+                        :class="zoneHasContent(zone.id) ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'">
+                    <span class="material-symbols-outlined text-xs" x-text="zoneHasContent(zone.id) ? 'check' : 'remove'"></span>
+                  </span>
+                  <span class="font-bold text-xs" x-text="zone.label"></span>
+                  <span class="text-[10px] text-gray-400" x-text="zone.width + ' × ' + zone.height"></span>
+                </div>
+                <button @click="showPreviewModal = false; switchZone(zone.id); activeTab = 'design'"
+                        class="w-full py-2 text-xs font-bold rounded-lg border border-gray-200 dark:border-gray-600 hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-1">
+                  <span class="material-symbols-outlined text-sm">edit</span> Edit <span x-text="zone.label"></span>
+                </button>
+              </div>
+            </template>
+          </div>
+        </div>
+        <div class="p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/50 rounded-b-2xl flex items-center justify-between">
+          <div class="text-xl font-black text-primary">$<span x-text="(totalPrice * quantity).toFixed(2)"></span></div>
+          <div class="flex gap-3">
+            <button @click="showPreviewModal = false" class="px-5 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 text-sm font-bold">Close</button>
+            <button @click="showPreviewModal = false; addToCart()" :disabled="!canAddToCart"
+                    :class="canAddToCart ? 'bg-primary hover:bg-primary/90' : 'bg-gray-300 cursor-not-allowed'"
+                    class="px-5 py-2.5 rounded-lg text-white text-sm font-bold flex items-center gap-2">
+              <span class="material-symbols-outlined text-lg">shopping_bag</span>Add to Cart
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  function mugDesigner() {
+    return {
+      // ===== UI STATE =====
+      activeTab: 'design',
+      currentZone: 'front',
+      isDragOver: false,
+      showToast: false,
+      toastMessage: '',
+      toastSub: '',
+      textInput: '',
+      showPreviewModal: false,
+      zoomLevel: 1,
+      showSafeZone: true,
+      showGrid: false,
+      selectedLayerId: null,
+
+      // ===== CANVAS =====
+      canvas: null,
+      ctx: null,
+      loadedImages: {},
+      isDraggingLayer: false,
+      dragStart: { x: 0, y: 0 },
+
+      // ===== MUG SHAPE (px on 600x500 canvas) =====
+      mug: {
+        // Body - straight cylindrical shape (matching real mug reference)
+        topLeft: { x: 140, y: 75 },
+        topRight: { x: 420, y: 75 },
+        bottomLeft: { x: 144, y: 420 },
+        bottomRight: { x: 416, y: 420 },
+        bottomCurve: 30,
+        // Print area (inside body, where image gets clipped) - full body coverage
+        print: { x: 142, y: 80, w: 276, h: 335 },
+        // Handle - rounder, more realistic
+        handleX: 420,
+        handleTopY: 145,
+        handleBottomY: 345,
+        handleOutX: 520,
+        handleWidth: 22,
+      },
+
+      // ===== ZONES =====
+      zones: [
+        { id: 'front', label: 'Front', width: '3.125"', height: '3.75"', inchW: 3.125 },
+        { id: 'rear',  label: 'Rear',  width: '1.5"',   height: '3.75"', inchW: 1.5 },
+        { id: 'back',  label: 'Back',  width: '3.125"', height: '3.75"', inchW: 3.125 }
+      ],
+      fullWrapZone: { id: 'fullwrap', label: 'Full Wrap', width: '7.75"', height: '3.75"', inchW: 7.75 },
+
+      // ===== LAYERS =====
+      layers: { front: [], back: [], rear: [], fullwrap: [] },
+
+      // ===== OPTIONS =====
+      selectedColor: '#ffffff',
+      selectedHandleColor: '#e53e3e',
+      selectedMugType: 'standard',
+      quantity: 1,
+
+      colors: [
+        { name: 'White',  value: '#ffffff' },
+        { name: 'Black',  value: '#2d3748' },
+        { name: 'Red',    value: '#e53e3e' },
+        { name: 'Blue',   value: '#3182ce' },
+        { name: 'Green',  value: '#38a169' },
+        { name: 'Gold',   value: '#d69e2e' },
+        { name: 'Pink',   value: '#ed64a6' },
+        { name: 'Purple', value: '#805ad5' },
+      ],
+      handleColors: [
+        { name: 'Red',    value: '#e53e3e' },
+        { name: 'White',  value: '#ffffff' },
+        { name: 'Black',  value: '#2d3748' },
+        { name: 'Blue',   value: '#3182ce' },
+        { name: 'Green',  value: '#38a169' },
+        { name: 'Gold',   value: '#d69e2e' },
+        { name: 'Pink',   value: '#ed64a6' },
+        { name: 'Purple', value: '#805ad5' },
+      ],
+      mugTypes: [
+        { value: 'standard', label: 'Standard (3-Zone)', icon: 'view_carousel', description: 'Front + Back + Rear zones' },
+        { value: 'fullwrap', label: 'Full Wrap',         icon: 'panorama',       description: 'Single continuous wrap' },
+        { value: 'heart',    label: 'Heart Handle',      icon: 'favorite',       description: 'Heart-shaped handle (+$2.50)' }
+      ],
+
+      // ===== COMPUTED =====
+      get activeZones() {
+        if (this.selectedMugType === 'fullwrap') return [this.fullWrapZone];
+        return this.zones;
+      },
+      get canAddToCart() {
+        if (this.selectedMugType === 'fullwrap') return this.layers.fullwrap.length > 0;
+        return this.zones.some(z => this.layers[z.id].length > 0);
+      },
+      get totalPrice() {
+        let t = 15.99;
+        if (this.selectedMugType === 'heart') t += 2.50;
+        t += this.getDesignCount() * 3;
+        const xt = this.getTotalTextLayers();
+        if (xt > 1) t += (xt - 1) * 2;
+        if (this.selectedColor !== '#ffffff') t += 1.50;
+        return t;
+      },
+
+      // ===== INIT =====
+      init() {
+        this.$nextTick(() => {
+          this.canvas = document.getElementById('mugCanvas');
+          this.ctx = this.canvas.getContext('2d');
+          this.loadFromStorage();
+          this.renderCanvas();
+          this.setupCanvasEvents();
+        });
+        this.$watch('showPreviewModal', (v) => {
+          if (v) this.$nextTick(() => this.renderPreviewCanvases());
+        });
+        this.$watch('selectedColor', () => this.saveToStorage());
+        this.$watch('selectedHandleColor', () => this.saveToStorage());
+      },
+
+      // ============================
+      //  MUG BODY PATH (SVG-STYLE)
+      // ============================
+      // Creates the mug body clip path - slightly tapered cylinder with rounded bottom
+      mugBodyPath(ctx, m) {
+        const tl = m.topLeft, tr = m.topRight, bl = m.bottomLeft, br = m.bottomRight;
+        const bc = m.bottomCurve;
+        ctx.beginPath();
+        // Top edge (slight curve for rim perspective)
+        ctx.moveTo(tl.x, tl.y);
+        ctx.lineTo(tr.x, tr.y);
+        // Right side (tapers in toward bottom)
+        ctx.lineTo(br.x, br.y - bc);
+        // Bottom right curve
+        ctx.quadraticCurveTo(br.x, br.y, br.x - bc, br.y);
+        // Bottom edge
+        ctx.lineTo(bl.x + bc, bl.y);
+        // Bottom left curve
+        ctx.quadraticCurveTo(bl.x, bl.y, bl.x, bl.y - bc);
+        // Left side
+        ctx.lineTo(tl.x, tl.y);
+        ctx.closePath();
+      },
+
+      // =============================
+      //  MAIN CANVAS RENDER
+      // =============================
+      renderCanvas() {
+        if (!this.ctx) return;
+        const ctx = this.ctx;
+        const c = this.canvas;
+        const m = this.mug;
+        ctx.clearRect(0, 0, c.width, c.height);
+
+        const bodyColor = this.selectedColor;
+        const handleColor = this.selectedHandleColor;
+
+        // --- 1. Drop shadow (no blur filter for performance) ---
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(280, 440, 145, 18, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.06)';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(280, 440, 115, 12, 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.05)';
+        ctx.fill();
+        ctx.restore();
+
+        // --- 2. Handle (behind body) ---
+        this.drawHandle(ctx, m, handleColor);
+
+        // --- 3. Mug body fill (solid color) ---
+        ctx.save();
+        this.mugBodyPath(ctx, m);
+        const bodyGrad = ctx.createLinearGradient(m.topLeft.x, 0, m.topRight.x, 0);
+        bodyGrad.addColorStop(0, this.lightenColor(bodyColor, 20));
+        bodyGrad.addColorStop(0.3, bodyColor);
+        bodyGrad.addColorStop(0.7, bodyColor);
+        bodyGrad.addColorStop(1, this.darkenColor(bodyColor, 20));
+        ctx.fillStyle = bodyGrad;
+        ctx.fill();
+        ctx.restore();
+
+        // --- 4. CLIP: Image + Text "injected" onto mug surface ---
+        ctx.save();
+        this.mugBodyPath(ctx, m);
+        ctx.clip(); // SVG-style mask!
+
+        // 4a. Draw all visible layers (images + text) clipped to mug body
+        this.renderLayers(ctx, m.print);
+
+        // 4b. Curvature overlay (makes flat image look wrapped on cylinder)
+        const curveGrad = ctx.createLinearGradient(m.topLeft.x, 0, m.topRight.x, 0);
+        curveGrad.addColorStop(0, 'rgba(255,255,255,0.22)');
+        curveGrad.addColorStop(0.15, 'rgba(255,255,255,0.08)');
+        curveGrad.addColorStop(0.4, 'rgba(255,255,255,0)');
+        curveGrad.addColorStop(0.6, 'rgba(0,0,0,0)');
+        curveGrad.addColorStop(0.85, 'rgba(0,0,0,0.06)');
+        curveGrad.addColorStop(1, 'rgba(0,0,0,0.15)');
+        ctx.fillStyle = curveGrad;
+        ctx.fillRect(m.topLeft.x, m.topLeft.y, m.topRight.x - m.topLeft.x, m.bottomLeft.y - m.topLeft.y);
+
+        // 4c. Vertical curvature (slight darkening at bottom for depth)
+        const vGrad = ctx.createLinearGradient(0, m.topLeft.y, 0, m.bottomLeft.y);
+        vGrad.addColorStop(0, 'rgba(255,255,255,0.05)');
+        vGrad.addColorStop(0.7, 'rgba(0,0,0,0)');
+        vGrad.addColorStop(1, 'rgba(0,0,0,0.08)');
+        ctx.fillStyle = vGrad;
+        ctx.fillRect(m.topLeft.x, m.topLeft.y, m.topRight.x - m.topLeft.x, m.bottomLeft.y - m.topLeft.y);
+
+        ctx.restore(); // End clip
+
+        // --- 5. Mug body outline ---
+        ctx.save();
+        this.mugBodyPath(ctx, m);
+        ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        ctx.restore();
+
+        // --- 6. Top rim (elliptical, shows perspective) ---
+        this.drawRim(ctx, m, bodyColor, handleColor);
+
+        // --- 7. Glossy highlight streak ---
+        ctx.save();
+        const hlGrad = ctx.createLinearGradient(m.topLeft.x + 20, 0, m.topLeft.x + 60, 0);
+        hlGrad.addColorStop(0, 'rgba(255,255,255,0)');
+        hlGrad.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+        hlGrad.addColorStop(1, 'rgba(255,255,255,0)');
+        this.mugBodyPath(ctx, m);
+        ctx.clip();
+        ctx.fillStyle = hlGrad;
+        ctx.fillRect(m.topLeft.x + 10, m.topLeft.y, 60, m.bottomLeft.y - m.topLeft.y);
+        ctx.restore();
+
+        // --- 8. Safe zone / grid overlays ---
+        if (this.showSafeZone) this.drawSafeZone(ctx, m.print);
+        if (this.showGrid) this.drawGrid(ctx, m.print);
+
+        // --- 9. Zone label ---
+        this.drawZoneLabel(ctx, m.print);
+
+        // --- 10. Selection indicator ---
+        const selLayer = this.getSelectedLayer();
+        if (selLayer && selLayer._bounds) {
+          this.drawSelectionBox(ctx, selLayer);
+        }
+
+        // Update thumbnails
+        try {
+          if (this.selectedMugType !== 'fullwrap') this.updateThumbnails();
+        } catch(e) {}
+      },
+
+      // ===== HANDLE (round elliptical like real ceramic mug) =====
+      drawHandle(ctx, m, color) {
+        ctx.save();
+        const midY = (m.handleTopY + m.handleBottomY) / 2;
+        const ry = (m.handleBottomY - m.handleTopY) / 2;
+        const rx = m.handleOutX - m.handleX;
+        const ecx = m.handleX;
+        const ecy = midY;
+        const hw = m.handleWidth;
+
+        const handleArc = () => {
+          ctx.beginPath();
+          ctx.ellipse(ecx, ecy, rx, ry, 0, -Math.PI / 2, Math.PI / 2);
+        };
+
+        handleArc();
+        ctx.lineWidth = hw + 8;
+        ctx.strokeStyle = 'rgba(0,0,0,0.07)';
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        handleArc();
+        ctx.lineWidth = hw;
+        ctx.strokeStyle = color;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        handleArc();
+        ctx.lineWidth = hw - 8;
+        ctx.strokeStyle = this.lightenColor(color, 20);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.ellipse(ecx, ecy, rx + 1, ry + 1, 0, -Math.PI * 0.45, Math.PI * 0.45);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.ellipse(ecx, ecy, rx - 8, ry - 6, 0, -Math.PI * 0.35, Math.PI * 0.35);
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+        ctx.stroke();
+
+        ctx.restore();
+      },
+
+      // ===== RIM (top of mug, elliptical) =====
+      drawRim(ctx, m, bodyColor, handleColor) {
+        const cx = (m.topLeft.x + m.topRight.x) / 2;
+        const cy = m.topLeft.y;
+        const rx = (m.topRight.x - m.topLeft.x) / 2;
+        const ry = 12;
+
+        // Outer rim ellipse
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        ctx.fillStyle = this.darkenColor(bodyColor, 8);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+
+        // Inner rim (colored inside)
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx - 8, ry - 3, 0, 0, Math.PI * 2);
+        ctx.fillStyle = handleColor; // Inner color matches handle
+        ctx.fill();
+        ctx.restore();
+
+        // Inner dark depth
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + 2, rx - 14, ry - 5, 0, 0, Math.PI * 2);
+        ctx.fillStyle = this.darkenColor(handleColor, 40);
+        ctx.fill();
+        ctx.restore();
+
+        // Rim highlight (top edge shine)
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(cx, cy - 1, rx - 2, ry - 1, 0, Math.PI + 0.3, Math.PI * 2 - 0.3);
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.restore();
+      },
+
+      // ===== LAYER RENDERING (clipped to mug body) =====
+      renderLayers(ctx, pa) {
+        const zoneLayers = this.layers[this.currentZone];
+        if (!zoneLayers) return;
+        zoneLayers.forEach(layer => {
+          if (!layer.visible) return;
+          ctx.save();
+          if (layer.type === 'image' && this.loadedImages[layer.id]) {
+            this.renderImageLayer(ctx, pa, layer, this.loadedImages[layer.id]);
+          } else if (layer.type === 'text') {
+            this.renderTextLayer(ctx, pa, layer);
+          }
+          ctx.restore();
+        });
+      },
+
+      renderImageLayer(ctx, pa, layer, img) {
+        const scale = (layer.scalePercent || 100) / 100;
+        const rotation = (layer.rotation || 0) * Math.PI / 180;
+        const flipH = layer.flipH ? -1 : 1;
+        const flipV = layer.flipV ? -1 : 1;
+        const fitMode = layer.fitMode || 'cover';
+
+        let drawW, drawH;
+        if (fitMode === 'cover') {
+          // Full inject: image covers entire print area with no gaps
+          const coverRatio = Math.max(pa.w / img.width, pa.h / img.height);
+          drawW = img.width * coverRatio * scale;
+          drawH = img.height * coverRatio * scale;
+        } else {
+          // Contain: fit inside with small margin
+          const maxW = pa.w;
+          const maxH = pa.h;
+          const ratio = Math.min(maxW / img.width, maxH / img.height);
+          drawW = img.width * ratio * scale;
+          drawH = img.height * ratio * scale;
+        }
+
+        const cx = pa.x + (layer.posX || 0.5) * pa.w;
+        const cy = pa.y + (layer.posY || 0.5) * pa.h;
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(rotation);
+        ctx.scale(flipH, flipV);
+        ctx.drawImage(img, -drawW / 2, -drawH / 2, drawW, drawH);
+        ctx.restore();
+
+        layer._bounds = { x: cx - drawW / 2, y: cy - drawH / 2, w: drawW, h: drawH, cx, cy };
+      },
+
+      renderTextLayer(ctx, pa, layer) {
+        const fontSize = layer.fontSize || 32;
+        const fontFamily = layer.fontFamily || 'Inter';
+        const bold = layer.bold ? 'bold' : 'normal';
+        const italic = layer.italic ? 'italic ' : '';
+        const rotation = (layer.rotation || 0) * Math.PI / 180;
+
+        ctx.save();
+        ctx.font = `${italic}${bold} ${fontSize}px ${fontFamily}, sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const cx = pa.x + (layer.posX || 0.5) * pa.w;
+        const cy = pa.y + (layer.posY || 0.5) * pa.h;
+
+        ctx.translate(cx, cy);
+        ctx.rotate(rotation);
+
+        // Draw text stroke/outline for visibility on photos
+        if (layer.stroke) {
+          ctx.strokeStyle = layer.strokeColor || '#000000';
+          ctx.lineWidth = Math.max(2, fontSize / 8);
+          ctx.lineJoin = 'round';
+          ctx.strokeText(layer.content, 0, 0);
+        }
+
+        ctx.fillStyle = layer.color || '#ffffff';
+        ctx.fillText(layer.content, 0, 0);
+
+        const metrics = ctx.measureText(layer.content);
+        ctx.restore();
+
+        // Calculate bounds accounting for rotation
+        const textW = metrics.width;
+        const textH = fontSize;
+        const absRot = Math.abs(rotation);
+        const boundW = textW * Math.cos(absRot) + textH * Math.sin(absRot);
+        const boundH = textW * Math.sin(absRot) + textH * Math.cos(absRot);
+        layer._bounds = { x: cx - boundW / 2, y: cy - boundH / 2, w: boundW, h: boundH, cx, cy };
+      },
+
+      drawSelectionBox(ctx, layer) {
+        const b = layer._bounds;
+        if (!b) return;
+        ctx.save();
+        ctx.strokeStyle = '#308ce8';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 3]);
+        ctx.strokeRect(b.x - 4, b.y - 4, b.w + 8, b.h + 8);
+        // Corner handles
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#308ce8';
+        [[b.x - 4, b.y - 4], [b.x + b.w + 4, b.y - 4], [b.x - 4, b.y + b.h + 4], [b.x + b.w + 4, b.y + b.h + 4]].forEach(([hx, hy]) => {
+          ctx.fillRect(hx - 3, hy - 3, 6, 6);
+        });
+        ctx.restore();
+      },
+
+      drawSafeZone(ctx, pa) {
+        const margin = 15;
+        ctx.save();
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = '#308ce8';
+        ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.5;
+        ctx.strokeRect(pa.x + margin, pa.y + margin, pa.w - margin * 2, pa.h - margin * 2);
+        ctx.font = '10px Inter, sans-serif';
+        ctx.fillStyle = '#308ce8';
+        ctx.textAlign = 'center';
+        ctx.setLineDash([]);
+        ctx.fillText('SAFE ZONE', pa.x + pa.w / 2, pa.y + margin - 3);
+        ctx.restore();
+      },
+
+      drawGrid(ctx, pa) {
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+        ctx.lineWidth = 0.5;
+        const step = 25;
+        for (let x = pa.x + step; x < pa.x + pa.w; x += step) {
+          ctx.beginPath(); ctx.moveTo(x, pa.y); ctx.lineTo(x, pa.y + pa.h); ctx.stroke();
+        }
+        for (let y = pa.y + step; y < pa.y + pa.h; y += step) {
+          ctx.beginPath(); ctx.moveTo(pa.x, y); ctx.lineTo(pa.x + pa.w, y); ctx.stroke();
+        }
+        ctx.restore();
+      },
+
+      drawZoneLabel(ctx, pa) {
+        const zone = this.activeZones.find(z => z.id === this.currentZone);
+        if (!zone) return;
+        ctx.save();
+        ctx.font = 'bold 11px Inter, sans-serif';
+        ctx.fillStyle = 'rgba(0,0,0,0.2)';
+        ctx.textAlign = 'center';
+        ctx.fillText(zone.label.toUpperCase() + ' \u2022 ' + zone.width + ' x ' + zone.height, pa.x + pa.w / 2, pa.y + pa.h - 5);
+        ctx.restore();
+      },
+
+      // ===== CANVAS INTERACTION (drag image on mug) =====
+      setupCanvasEvents() {
+        const canvas = this.canvas;
+        const handler = (type, e) => {
+          const pos = this.getCanvasPos(e);
+          if (type === 'down') {
+            const hit = this.hitTestLayers(pos);
+            if (hit) {
+              this.selectedLayerId = hit.id;
+              this.isDraggingLayer = true;
+              this.dragStart = { x: pos.x, y: pos.y };
+            } else {
+              this.selectedLayerId = null;
+            }
+            this.renderCanvas();
+          } else if (type === 'move' && this.isDraggingLayer && this.selectedLayerId) {
+            const layer = this.getLayerById(this.selectedLayerId);
+            if (!layer) return;
+            const pa = this.mug.print;
+            const dx = pos.x - this.dragStart.x;
+            const dy = pos.y - this.dragStart.y;
+            layer.posX = Math.max(0, Math.min(1, (layer.posX || 0.5) + dx / pa.w));
+            layer.posY = Math.max(0, Math.min(1, (layer.posY || 0.5) + dy / pa.h));
+            this.dragStart = { x: pos.x, y: pos.y };
+            this.renderCanvas();
+          } else if (type === 'up') {
+            this.isDraggingLayer = false;
+          }
+        };
+
+        canvas.addEventListener('mousedown', (e) => handler('down', e));
+        canvas.addEventListener('mousemove', (e) => handler('move', e));
+        canvas.addEventListener('mouseup', (e) => handler('up', e));
+        canvas.addEventListener('mouseleave', (e) => handler('up', e));
+        canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handler('down', e.touches[0]); }, { passive: false });
+        canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handler('move', e.touches[0]); }, { passive: false });
+        canvas.addEventListener('touchend', (e) => handler('up', e));
+      },
+
+      getCanvasPos(e) {
+        const rect = this.canvas.getBoundingClientRect();
+        return {
+          x: (e.clientX - rect.left) * (this.canvas.width / rect.width),
+          y: (e.clientY - rect.top) * (this.canvas.height / rect.height)
+        };
+      },
+
+      hitTestLayers(pos) {
+        const zoneLayers = [...(this.layers[this.currentZone] || [])].reverse();
+        for (const layer of zoneLayers) {
+          if (!layer.visible || !layer._bounds) continue;
+          const b = layer._bounds;
+          if (pos.x >= b.x - 10 && pos.x <= b.x + b.w + 10 && pos.y >= b.y - 10 && pos.y <= b.y + b.h + 10) return layer;
+        }
+        return null;
+      },
+
+      // ===== LAYER MANAGEMENT =====
+      getCurrentLayers() { return this.layers[this.currentZone] || []; },
+      getZoneLayers(zoneId) { return this.layers[zoneId] || []; },
+      getLayerById(id) {
+        for (const z in this.layers) { const f = this.layers[z].find(l => l.id === id); if (f) return f; }
+        return null;
+      },
+      getSelectedLayer() { return this.selectedLayerId ? this.getLayerById(this.selectedLayerId) : null; },
+      selectLayer(id) { this.selectedLayerId = id; this.renderCanvas(); },
+      getCurrentImage() {
+        const img = this.layers[this.currentZone]?.find(l => l.type === 'image');
+        // Auto-select the image layer when it exists so controls work
+        if (img && this.selectedLayerId !== img.id) {
+          const sel = this.getSelectedLayer();
+          if (!sel || sel.type !== 'text') this.selectedLayerId = img.id;
+        }
+        return img ? img.src : null;
+      },
+      // Helper: get the current image layer directly (for controls that must always target the image)
+      getImageLayer() {
+        return this.layers[this.currentZone]?.find(l => l.type === 'image') || null;
+      },
+
+      addImageLayer(src, file) {
+        this.layers[this.currentZone] = this.layers[this.currentZone].filter(l => l.type !== 'image');
+        const defaultFit = 'cover';
+        const layerId = 'layer_' + Date.now();
+        this.layers[this.currentZone].unshift({
+          id: layerId, type: 'image', src, fileName: file?.name || 'image',
+          posX: 0.5, posY: 0.5, scalePercent: 100, rotation: 0,
+          flipH: false, flipV: false, fitMode: defaultFit, visible: true, _bounds: null
+        });
+        this.selectedLayerId = layerId;
+        const img = new Image();
+        img.onload = () => { this.loadedImages[layerId] = img; this.renderCanvas(); this.saveToStorage(); };
+        img.src = src;
+      },
+
+      addTextLayer() {
+        if (!this.textInput.trim()) return;
+        const existing = this.layers[this.currentZone].filter(l => l.type === 'text');
+        if (existing.length >= 3) { this.showNotification('Max 3 text layers', 'Limit reached'); return; }
+        const layerId = 'layer_' + Date.now();
+        // Default: white text with black outline, centered, 32px bold - visible on any photo
+        this.layers[this.currentZone].push({
+          id: layerId, type: 'text', content: this.textInput.trim(),
+          posX: 0.5, posY: 0.3 + existing.length * 0.2, fontSize: 32, fontFamily: 'Impact',
+          color: '#ffffff', bold: true, italic: false, rotation: 0, visible: true,
+          stroke: true, strokeColor: '#000000', _bounds: null
+        });
+        this.selectedLayerId = layerId;
+        this.textInput = '';
+        this.renderCanvas();
+        this.saveToStorage();
+      },
+
+      deleteLayer(id) {
+        for (const z in this.layers) {
+          const idx = this.layers[z].findIndex(l => l.id === id);
+          if (idx !== -1) {
+            delete this.loadedImages[id];
+            this.layers[z].splice(idx, 1);
+            if (this.selectedLayerId === id) this.selectedLayerId = null;
+            this.renderCanvas();
+            this.saveToStorage();
+            return;
+          }
+        }
+      },
+
+      moveLayer(id, dir) {
+        const zl = this.layers[this.currentZone];
+        const i = zl.findIndex(l => l.id === id);
+        if (i === -1) return;
+        if (dir === 'up' && i > 0) [zl[i], zl[i-1]] = [zl[i-1], zl[i]];
+        else if (dir === 'down' && i < zl.length - 1) [zl[i], zl[i+1]] = [zl[i+1], zl[i]];
+        this.renderCanvas();
+      },
+
+      toggleLayerVisibility(id) {
+        const l = this.getLayerById(id);
+        if (l) { l.visible = !l.visible; this.renderCanvas(); }
+      },
+
+      removeCurrentImage() {
+        const img = this.layers[this.currentZone]?.find(l => l.type === 'image');
+        if (img) this.deleteLayer(img.id);
+      },
+
+      // ===== LAYER PROPERTY UPDATES =====
+      updateLayerScale(v) { const l = this.getSelectedLayer(); if (l) { l.scalePercent = parseInt(v); this.renderCanvas(); } },
+      updateLayerRotation(v) { const l = this.getSelectedLayer(); if (l) { l.rotation = parseInt(v); this.renderCanvas(); } },
+      flipLayer(axis) {
+        const l = this.getSelectedLayer();
+        if (!l) return;
+        if (axis === 'h') l.flipH = !l.flipH;
+        if (axis === 'v') l.flipV = !l.flipV;
+        this.renderCanvas();
+      },
+      centerLayer() { const l = this.getSelectedLayer(); if (l) { l.posX = 0.5; l.posY = 0.5; this.renderCanvas(); } },
+      toggleTextStyle(s) { const l = this.getSelectedLayer(); if (l?.type === 'text') { l[s] = !l[s]; this.renderCanvas(); } },
+      updateTextColor(c) { const l = this.getSelectedLayer(); if (l?.type === 'text') { l.color = c; this.renderCanvas(); } },
+      updateFontSize(v) { const l = this.getSelectedLayer(); if (l?.type === 'text') { l.fontSize = parseInt(v); this.renderCanvas(); } },
+      updateFontFamily(v) { const l = this.getSelectedLayer(); if (l?.type === 'text') { l.fontFamily = v; this.renderCanvas(); } },
+      updateFitMode(m) { const l = this.getSelectedLayer(); if (l?.type === 'image') { l.fitMode = m; this.renderCanvas(); } },
+
+      // Direct image layer controls (always target the image layer, not selected layer)
+      updateImageProp(prop, value) {
+        const l = this.getImageLayer();
+        if (l) { l[prop] = value; this.renderCanvas(); this.saveToStorage(); }
+      },
+      flipImageLayer(axis) {
+        const l = this.getImageLayer();
+        if (!l) return;
+        if (axis === 'h') l.flipH = !l.flipH;
+        if (axis === 'v') l.flipV = !l.flipV;
+        this.renderCanvas(); this.saveToStorage();
+      },
+      centerImageLayer() {
+        const l = this.getImageLayer();
+        if (l) { l.posX = 0.5; l.posY = 0.5; this.renderCanvas(); this.saveToStorage(); }
+      },
+
+      // Text orientation presets
+      setTextOrientation(angle) {
+        const l = this.getSelectedLayer();
+        if (l?.type === 'text') { l.rotation = angle; this.renderCanvas(); this.saveToStorage(); }
+      },
+
+      // Text position presets (9-grid)
+      setTextPosition(posX, posY) {
+        const l = this.getSelectedLayer();
+        if (l?.type === 'text') { l.posX = posX; l.posY = posY; this.renderCanvas(); this.saveToStorage(); }
+      },
+
+      // Text stroke/outline toggle
+      toggleTextStroke() {
+        const l = this.getSelectedLayer();
+        if (l?.type === 'text') { l.stroke = !l.stroke; if (l.stroke && !l.strokeColor) l.strokeColor = '#000000'; this.renderCanvas(); this.saveToStorage(); }
+      },
+      updateStrokeColor(c) {
+        const l = this.getSelectedLayer();
+        if (l?.type === 'text') { l.strokeColor = c; this.renderCanvas(); }
+      },
+
+      // ===== FILE HANDLING =====
+      handleFileUpload(e) { const f = e.target.files[0]; if (f) this.processFile(f); e.target.value = ''; },
+      handleDrop(e) { this.isDragOver = false; const f = e.dataTransfer.files[0]; if (f) this.processFile(f); },
+      processFile(file) {
+        if (!file.type.match(/^image\/(png|jpeg|webp)$/)) { this.showNotification('PNG, JPG, or WebP only', 'Invalid format'); return; }
+        if (file.size > 10 * 1024 * 1024) { this.showNotification('Max 10MB', 'File too large'); return; }
+        const reader = new FileReader();
+        reader.onload = (e) => this.addImageLayer(e.target.result, file);
+        reader.readAsDataURL(file);
+      },
+
+      // ===== ZONE SWITCHING =====
+      switchZone(id) { this.currentZone = id; this.selectedLayerId = null; this.renderCanvas(); this.saveToStorage(); },
+      switchMugType(type) {
+        this.selectedMugType = type;
+        if (type === 'fullwrap') this.currentZone = 'fullwrap';
+        else if (this.currentZone === 'fullwrap') this.currentZone = 'front';
+        this.selectedLayerId = null;
+        this.renderCanvas();
+        this.saveToStorage();
+      },
+      zoneHasContent(id) { return this.layers[id]?.length > 0; },
+
+      // ===== THUMBNAILS =====
+      updateThumbnails() {
+        this.zones.forEach(zone => {
+          const tc = document.getElementById('thumb_' + zone.id);
+          if (!tc) return;
+          const tctx = tc.getContext('2d');
+          const tw = tc.width, th = tc.height;
+          tctx.clearRect(0, 0, tw, th);
+          tctx.fillStyle = this.selectedColor;
+          tctx.beginPath();
+          tctx.moveTo(3, 3); tctx.lineTo(tw - 3, 3);
+          tctx.lineTo(tw - 5, th - 3); tctx.quadraticCurveTo(tw - 5, th, tw - 10, th);
+          tctx.lineTo(10, th); tctx.quadraticCurveTo(5, th, 5, th - 3);
+          tctx.lineTo(3, 3); tctx.closePath();
+          tctx.fill();
+          tctx.strokeStyle = 'rgba(0,0,0,0.1)'; tctx.lineWidth = 1; tctx.stroke();
+
+          const zl = this.layers[zone.id];
+          if (zl.length > 0) {
+            tctx.save();
+            const pa = { x: 5, y: 5, w: tw - 10, h: th - 10 };
+            tctx.beginPath(); tctx.rect(pa.x, pa.y, pa.w, pa.h); tctx.clip();
+            zl.forEach(l => {
+              if (!l.visible) return;
+              tctx.save();
+              if (l.type === 'image' && this.loadedImages[l.id]) {
+                const img = this.loadedImages[l.id];
+                const scale = (l.scalePercent || 100) / 100;
+                const fm = l.fitMode || 'cover';
+                let dw, dh;
+                if (fm === 'cover') {
+                  const cr = Math.max(pa.w / img.width, pa.h / img.height);
+                  dw = img.width * cr * scale; dh = img.height * cr * scale;
+                } else {
+                  const r = Math.min((pa.w * 0.9) / img.width, (pa.h * 0.9) / img.height, 1);
+                  dw = img.width * r * scale; dh = img.height * r * scale;
+                }
+                const cx = pa.x + (l.posX || 0.5) * pa.w;
+                const cy = pa.y + (l.posY || 0.5) * pa.h;
+                tctx.translate(cx, cy);
+                tctx.rotate((l.rotation || 0) * Math.PI / 180);
+                tctx.scale(l.flipH ? -1 : 1, l.flipV ? -1 : 1);
+                tctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+              } else if (l.type === 'text') {
+                const fs = Math.max(6, Math.round((l.fontSize || 32) * (pa.h / 320)));
+                tctx.font = `${l.italic ? 'italic ' : ''}${l.bold ? 'bold' : 'normal'} ${fs}px ${l.fontFamily || 'Inter'}`;
+                tctx.textAlign = 'center'; tctx.textBaseline = 'middle';
+                const cx = pa.x + (l.posX || 0.5) * pa.w;
+                const cy = pa.y + (l.posY || 0.5) * pa.h;
+                tctx.translate(cx, cy);
+                tctx.rotate((l.rotation || 0) * Math.PI / 180);
+                if (l.stroke) {
+                  tctx.strokeStyle = l.strokeColor || '#000000';
+                  tctx.lineWidth = Math.max(1, fs / 8);
+                  tctx.lineJoin = 'round';
+                  tctx.strokeText(l.content, 0, 0);
+                }
+                tctx.fillStyle = l.color || '#ffffff';
+                tctx.fillText(l.content, 0, 0);
+              }
+              tctx.restore();
+            });
+            tctx.restore();
+          }
+        });
+      },
+
+      // ===== PREVIEW MODAL (3 MUG RENDERS) =====
+      renderPreviewCanvases() {
+        const configs = [
+          { canvasId: 'preview_mug_front', zoneId: 'front', handleSide: 'left' },
+          { canvasId: 'preview_mug_rear',  zoneId: 'rear',  handleSide: 'none' },
+          { canvasId: 'preview_mug_back',  zoneId: 'back',  handleSide: 'right' },
+        ];
+
+        if (this.selectedMugType === 'fullwrap') {
+          configs.forEach(c => c.zoneId = 'fullwrap');
+        }
+
+        configs.forEach(cfg => {
+          const pc = document.getElementById(cfg.canvasId);
+          if (!pc) return;
+          const ctx = pc.getContext('2d');
+          const W = pc.width, H = pc.height;
+          ctx.clearRect(0, 0, W, H);
+          this._drawPreviewMug(ctx, W, H, cfg.zoneId, cfg.handleSide);
+        });
+      },
+
+      _drawPreviewMug(ctx, W, H, zoneId, handleSide) {
+        const bodyColor = this.selectedColor;
+        const handleColor = this.selectedHandleColor;
+
+        const scale = W / 320;
+        const mugW = Math.round(160 * scale), mugH = Math.round(210 * scale);
+        const cx = W / 2;
+        const mugTop = Math.round(55 * scale);
+        const mugBot = mugTop + mugH;
+
+        const tl = { x: cx - mugW/2, y: mugTop };
+        const tr = { x: cx + mugW/2, y: mugTop };
+        const bl = { x: cx - mugW/2 + 2, y: mugBot };
+        const br = { x: cx + mugW/2 - 2, y: mugBot };
+        const bc = Math.round(18 * scale);
+
+        const print = { x: tl.x + 2, y: tl.y + 4, w: tr.x - tl.x - 4, h: mugH - 8 };
+
+        const bodyPath = () => {
+          ctx.beginPath();
+          ctx.moveTo(tl.x, tl.y);
+          ctx.lineTo(tr.x, tr.y);
+          ctx.lineTo(br.x, br.y - bc);
+          ctx.quadraticCurveTo(br.x, br.y, br.x - bc, br.y);
+          ctx.lineTo(bl.x + bc, bl.y);
+          ctx.quadraticCurveTo(bl.x, bl.y, bl.x, bl.y - bc);
+          ctx.lineTo(tl.x, tl.y);
+          ctx.closePath();
+        };
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(cx, mugBot + Math.round(12 * scale), mugW/2 + Math.round(10 * scale), Math.round(10 * scale), 0, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(0,0,0,0.06)';
+        ctx.fill();
+        ctx.restore();
+
+        if (handleSide !== 'none') {
+          ctx.save();
+          const hW = Math.round(12 * scale);
+          const midY = (mugTop + mugBot) / 2;
+          const htY = mugTop + Math.round(45 * scale);
+          const hbY = mugBot - Math.round(50 * scale);
+          const ry = (hbY - htY) / 2;
+          const ecy = midY;
+          let ecx, rx;
+
+          if (handleSide === 'right') {
+            ecx = tr.x; rx = Math.round(55 * scale);
+          } else {
+            ecx = tl.x; rx = Math.round(55 * scale);
+          }
+
+          const rot = handleSide === 'left' ? Math.PI : 0;
+
+          const hArc = () => {
+            ctx.beginPath();
+            ctx.ellipse(ecx, ecy, rx, ry, rot, -Math.PI / 2, Math.PI / 2);
+          };
+
+          hArc();
+          ctx.lineWidth = hW + Math.round(5 * scale);
+          ctx.strokeStyle = 'rgba(0,0,0,0.07)';
+          ctx.lineCap = 'round';
+          ctx.stroke();
+
+          hArc();
+          ctx.lineWidth = hW;
+          ctx.strokeStyle = handleColor;
+          ctx.lineCap = 'round';
+          ctx.stroke();
+
+          hArc();
+          ctx.lineWidth = hW - Math.round(5 * scale);
+          ctx.strokeStyle = this.lightenColor(handleColor, 20);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.ellipse(ecx, ecy, rx + 1, ry + 1, rot, -Math.PI * 0.45, Math.PI * 0.45);
+          ctx.lineWidth = 1.5 * scale;
+          ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+          ctx.stroke();
+
+          ctx.restore();
+        }
+
+        ctx.save();
+        bodyPath();
+        const bodyGrad = ctx.createLinearGradient(tl.x, 0, tr.x, 0);
+        bodyGrad.addColorStop(0, this.lightenColor(bodyColor, 20));
+        bodyGrad.addColorStop(0.3, bodyColor);
+        bodyGrad.addColorStop(0.7, bodyColor);
+        bodyGrad.addColorStop(1, this.darkenColor(bodyColor, 20));
+        ctx.fillStyle = bodyGrad;
+        ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        bodyPath();
+        ctx.clip();
+        this._drawPreviewZoneLayers(ctx, print, zoneId);
+
+        const curveGrad = ctx.createLinearGradient(tl.x, 0, tr.x, 0);
+        curveGrad.addColorStop(0, 'rgba(255,255,255,0.22)');
+        curveGrad.addColorStop(0.15, 'rgba(255,255,255,0.08)');
+        curveGrad.addColorStop(0.4, 'rgba(255,255,255,0)');
+        curveGrad.addColorStop(0.6, 'rgba(0,0,0,0)');
+        curveGrad.addColorStop(0.85, 'rgba(0,0,0,0.06)');
+        curveGrad.addColorStop(1, 'rgba(0,0,0,0.15)');
+        ctx.fillStyle = curveGrad;
+        ctx.fillRect(tl.x, tl.y, tr.x - tl.x, mugH);
+
+        const vGrad = ctx.createLinearGradient(0, tl.y, 0, bl.y);
+        vGrad.addColorStop(0, 'rgba(255,255,255,0.05)');
+        vGrad.addColorStop(0.7, 'rgba(0,0,0,0)');
+        vGrad.addColorStop(1, 'rgba(0,0,0,0.08)');
+        ctx.fillStyle = vGrad;
+        ctx.fillRect(tl.x, tl.y, tr.x - tl.x, mugH);
+        ctx.restore();
+
+        ctx.save();
+        bodyPath();
+        ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.restore();
+
+        const rimCx = cx, rimCy = tl.y, rimRx = mugW / 2, rimRy = Math.round(8 * scale);
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(rimCx, rimCy, rimRx, rimRy, 0, 0, Math.PI * 2);
+        ctx.fillStyle = this.darkenColor(bodyColor, 8);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+        ctx.lineWidth = 0.5;
+        ctx.stroke();
+        ctx.restore();
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(rimCx, rimCy, rimRx - Math.round(5 * scale), rimRy - Math.round(2 * scale), 0, 0, Math.PI * 2);
+        ctx.fillStyle = handleColor;
+        ctx.fill();
+        ctx.restore();
+        ctx.save();
+        ctx.beginPath();
+        ctx.ellipse(rimCx, rimCy + 1, rimRx - Math.round(9 * scale), rimRy - Math.round(3 * scale), 0, 0, Math.PI * 2);
+        ctx.fillStyle = this.darkenColor(handleColor, 40);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        bodyPath();
+        ctx.clip();
+        const hlGrad = ctx.createLinearGradient(tl.x + Math.round(10 * scale), 0, tl.x + Math.round(40 * scale), 0);
+        hlGrad.addColorStop(0, 'rgba(255,255,255,0)');
+        hlGrad.addColorStop(0.5, 'rgba(255,255,255,0.35)');
+        hlGrad.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = hlGrad;
+        ctx.fillRect(tl.x + Math.round(5 * scale), tl.y, Math.round(40 * scale), mugH);
+        ctx.restore();
+
+        ctx.save();
+        ctx.font = `bold ${Math.round(12 * scale)}px Inter, system-ui, sans-serif`;
+        ctx.fillStyle = '#6b7280';
+        ctx.textAlign = 'center';
+        const zone = this.zones.find(z => z.id === zoneId) || this.fullWrapZone;
+        ctx.fillText(zone.label.toUpperCase() + ' (' + zone.width + ')', cx, mugBot + Math.round(35 * scale));
+        ctx.restore();
+      },
+
+      _drawPreviewZoneLayers(ctx, pa, zoneId) {
+        const zl = this.layers[zoneId];
+        if (!zl) return;
+        zl.forEach(layer => {
+          if (!layer.visible) return;
+          ctx.save();
+          if (layer.type === 'image' && this.loadedImages[layer.id]) {
+            const img = this.loadedImages[layer.id];
+            const scale = (layer.scalePercent || 100) / 100;
+            const fm = layer.fitMode || 'cover';
+            let dw, dh;
+            if (fm === 'cover') {
+              const cr = Math.max(pa.w / img.width, pa.h / img.height);
+              dw = img.width * cr * scale; dh = img.height * cr * scale;
+            } else {
+              const r = Math.min((pa.w * 0.9) / img.width, (pa.h * 0.9) / img.height, 1);
+              dw = img.width * r * scale; dh = img.height * r * scale;
+            }
+            const cx = pa.x + (layer.posX || 0.5) * pa.w;
+            const cy = pa.y + (layer.posY || 0.5) * pa.h;
+            ctx.translate(cx, cy);
+            ctx.rotate((layer.rotation || 0) * Math.PI / 180);
+            ctx.scale(layer.flipH ? -1 : 1, layer.flipV ? -1 : 1);
+            ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+          } else if (layer.type === 'text') {
+            const fs = Math.round((layer.fontSize || 32) * (pa.h / 400));
+            ctx.font = `${layer.italic ? 'italic ' : ''}${layer.bold ? 'bold' : 'normal'} ${fs}px ${layer.fontFamily || 'Inter'}`;
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            const cx = pa.x + (layer.posX || 0.5) * pa.w;
+            const cy = pa.y + (layer.posY || 0.5) * pa.h;
+            ctx.translate(cx, cy);
+            ctx.rotate((layer.rotation || 0) * Math.PI / 180);
+            if (layer.stroke) {
+              ctx.strokeStyle = layer.strokeColor || '#000000';
+              ctx.lineWidth = Math.max(1, fs / 8);
+              ctx.lineJoin = 'round';
+              ctx.strokeText(layer.content, 0, 0);
+            }
+            ctx.fillStyle = layer.color || '#ffffff';
+            ctx.fillText(layer.content, 0, 0);
+          }
+          ctx.restore();
+        });
+      },
+
+      // ===== EXPORT =====
+      exportAs(format) {
+        const ec = document.createElement('canvas');
+        const dpi = 300;
+        ec.width = Math.round(7.75 * dpi);
+        ec.height = Math.round(3.75 * dpi);
+        const ectx = ec.getContext('2d');
+        ectx.fillStyle = '#ffffff';
+        ectx.fillRect(0, 0, ec.width, ec.height);
+
+        const fullW = ec.width, fullH = ec.height;
+        const isFullWrap = this.selectedMugType === 'fullwrap';
+
+        if (isFullWrap) {
+          this._exportZoneLayers(ectx, this.layers.fullwrap, 0, fullW, fullH, dpi);
+        } else {
+          const zoneWidths = { front: Math.round(3.125 * dpi), rear: Math.round(1.5 * dpi), back: Math.round(3.125 * dpi) };
+          let offsetX = 0;
+          ['front', 'rear', 'back'].forEach((zid, i) => {
+            const zw = zoneWidths[zid];
+            this._exportZoneLayers(ectx, this.layers[zid], offsetX, zw, fullH, dpi);
+            if (i < 2) {
+              ectx.save(); ectx.setLineDash([10, 5]); ectx.strokeStyle = '#ccc'; ectx.lineWidth = 2;
+              ectx.beginPath(); ectx.moveTo(offsetX + zw, 0); ectx.lineTo(offsetX + zw, fullH); ectx.stroke(); ectx.restore();
+            }
+            ectx.save(); ectx.font = `bold ${Math.round(14 * dpi / 96)}px Inter`;
+            ectx.fillStyle = 'rgba(0,0,0,0.12)'; ectx.textAlign = 'center';
+            const z = this.zones.find(z => z.id === zid);
+            ectx.fillText(z.label.toUpperCase() + ' (' + z.width + ')', offsetX + zw / 2, 40);
+            ectx.restore();
+            offsetX += zw;
+          });
+        }
+
+        if (format === 'png') {
+          const a = document.createElement('a'); a.download = 'mug-design-' + Date.now() + '.png';
+          a.href = ec.toDataURL('image/png'); a.click();
+          this.showNotification('PNG exported at 300 DPI', 'Export complete');
+        } else if (format === 'jpeg') {
+          const a = document.createElement('a'); a.download = 'mug-design-' + Date.now() + '.jpg';
+          a.href = ec.toDataURL('image/jpeg', 0.95); a.click();
+          this.showNotification('JPEG exported at 300 DPI', 'Export complete');
+        } else if (format === 'pdf') {
+          this.exportPDF(ec);
+        }
+      },
+
+      _exportZoneLayers(ectx, zl, offsetX, zw, fullH, dpi) {
+        if (!zl) return;
+        zl.forEach(layer => {
+          if (!layer.visible) return;
+          ectx.save();
+          ectx.beginPath(); ectx.rect(offsetX, 0, zw, fullH); ectx.clip();
+          if (layer.type === 'image' && this.loadedImages[layer.id]) {
+            const img = this.loadedImages[layer.id];
+            const scale = (layer.scalePercent || 100) / 100;
+            const fm = layer.fitMode || 'cover';
+            let dw, dh;
+            if (fm === 'cover') {
+              const cr = Math.max(zw / img.width, fullH / img.height);
+              dw = img.width * cr * scale; dh = img.height * cr * scale;
+            } else {
+              const r = Math.min((zw * 0.9) / img.width, (fullH * 0.9) / img.height, 1);
+              dw = img.width * r * scale; dh = img.height * r * scale;
+            }
+            const cx = offsetX + (layer.posX || 0.5) * zw;
+            const cy = (layer.posY || 0.5) * fullH;
+            ectx.translate(cx, cy);
+            ectx.rotate((layer.rotation || 0) * Math.PI / 180);
+            ectx.scale(layer.flipH ? -1 : 1, layer.flipV ? -1 : 1);
+            ectx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+          } else if (layer.type === 'text') {
+            const sf = dpi / 96;
+            const fs = Math.round((layer.fontSize || 32) * sf);
+            ectx.font = `${layer.italic ? 'italic ' : ''}${layer.bold ? 'bold' : 'normal'} ${fs}px ${layer.fontFamily || 'Inter'}`;
+            ectx.textAlign = 'center'; ectx.textBaseline = 'middle';
+            const cx = offsetX + (layer.posX || 0.5) * zw;
+            const cy = (layer.posY || 0.5) * fullH;
+            ectx.translate(cx, cy);
+            ectx.rotate((layer.rotation || 0) * Math.PI / 180);
+            if (layer.stroke) {
+              ectx.strokeStyle = layer.strokeColor || '#000000';
+              ectx.lineWidth = Math.max(2, fs / 8);
+              ectx.lineJoin = 'round';
+              ectx.strokeText(layer.content, 0, 0);
+            }
+            ectx.fillStyle = layer.color || '#ffffff';
+            ectx.fillText(layer.content, 0, 0);
+          }
+          ectx.restore();
+        });
+      },
+
+      exportPDF(ec) {
+        if (typeof window.jspdf === 'undefined' && typeof jspdf === 'undefined') {
+          this.showNotification('PDF loading...', 'Please wait');
+          setTimeout(() => this.exportPDF(ec), 1000);
+          return;
+        }
+        const { jsPDF } = window.jspdf || jspdf;
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'in', format: [7.75, 3.75] });
+        pdf.addImage(ec.toDataURL('image/png'), 'PNG', 0, 0, 7.75, 3.75);
+        if (this.selectedMugType !== 'fullwrap') {
+          pdf.setDrawColor(200); pdf.setLineDashPattern([0.1, 0.05]); pdf.setLineWidth(0.01);
+          pdf.line(3.125, 0, 3.125, 3.75);
+          pdf.line(4.625, 0, 4.625, 3.75);
+          pdf.setFontSize(8); pdf.setTextColor(180);
+          pdf.text('FRONT (3.125")', 1.5625, 3.65, { align: 'center' });
+          pdf.text('REAR (1.5")', 3.875, 3.65, { align: 'center' });
+          pdf.text('BACK (3.125")', 6.1875, 3.65, { align: 'center' });
+        }
+        pdf.save('mug-design-' + Date.now() + '.pdf');
+        this.showNotification('PDF exported with guides', 'Export complete');
+      },
+
+      // ===== PRICING =====
+      getDesignCount() {
+        if (this.selectedMugType === 'fullwrap') return this.layers.fullwrap.length > 0 ? 1 : 0;
+        return this.zones.filter(z => this.layers[z.id].length > 0).length;
+      },
+      getTotalTextLayers() {
+        let c = 0;
+        for (const z in this.layers) c += this.layers[z].filter(l => l.type === 'text').length;
+        return c;
+      },
+
+      // ===== PERSISTENCE =====
+      saveToStorage() {
+        const state = { layers: {}, selectedColor: this.selectedColor, selectedHandleColor: this.selectedHandleColor, selectedMugType: this.selectedMugType, currentZone: this.currentZone };
+        for (const z in this.layers) state.layers[z] = this.layers[z].map(l => { const c = { ...l }; delete c._bounds; return c; });
+        try { localStorage.setItem('wpc_mug_designer', JSON.stringify(state)); } catch (e) {}
+      },
+      loadFromStorage() {
+        try {
+          const saved = localStorage.getItem('wpc_mug_designer');
+          if (!saved) return;
+          const s = JSON.parse(saved);
+          if (s.selectedColor) this.selectedColor = s.selectedColor;
+          if (s.selectedHandleColor) this.selectedHandleColor = s.selectedHandleColor;
+          if (s.selectedMugType) this.selectedMugType = s.selectedMugType;
+          if (s.currentZone) this.currentZone = s.currentZone;
+          if (s.layers) {
+            for (const z in s.layers) {
+              if (!this.layers[z]) continue;
+              this.layers[z] = s.layers[z];
+              this.layers[z].forEach(layer => {
+                if (layer.type === 'image' && layer.src) {
+                  const img = new Image();
+                  img.onload = () => {
+                    this.loadedImages[layer.id] = img;
+                    // Auto-select image layer in current zone so controls work immediately
+                    if (z === this.currentZone && !this.selectedLayerId) this.selectedLayerId = layer.id;
+                    this.renderCanvas();
+                  };
+                  img.src = layer.src;
+                }
+              });
+            }
+          }
+        } catch (e) {}
+      },
+
+      // ===== CART =====
+      addToCart() {
+        if (!this.canAddToCart) return;
+        const cart = JSON.parse(localStorage.getItem('mugCart') || '[]');
+        const ds = {};
+        for (const z in this.layers) ds[z] = this.layers[z].map(l => ({ type: l.type, content: l.type === 'text' ? l.content : l.fileName }));
+        cart.push({ id: Date.now(), type: 'Custom Mug', mugType: this.selectedMugType, color: this.selectedColor,
+          handleColor: this.selectedHandleColor, designs: ds, quantity: this.quantity,
+          unitPrice: this.totalPrice, totalPrice: this.totalPrice * this.quantity });
+        localStorage.setItem('mugCart', JSON.stringify(cart));
+        this.showNotification(`${this.quantity}x Custom Mug - $${(this.totalPrice * this.quantity).toFixed(2)}`, 'Added to cart');
+      },
+
+      // ===== NOTIFICATIONS =====
+      showNotification(msg, sub) {
+        this.toastMessage = msg; this.toastSub = sub || '';
+        this.showToast = true;
+        setTimeout(() => { this.showToast = false; }, 3000);
+      },
+
+      // ===== COLOR UTILS =====
+      lightenColor(hex, amount) {
+        const num = parseInt(hex.replace('#', ''), 16);
+        const R = Math.min(255, (num >> 16) + amount);
+        const G = Math.min(255, ((num >> 8) & 0xFF) + amount);
+        const B = Math.min(255, (num & 0xFF) + amount);
+        return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
+      },
+      darkenColor(hex, amount) {
+        const num = parseInt(hex.replace('#', ''), 16);
+        const R = Math.max(0, (num >> 16) - amount);
+        const G = Math.max(0, ((num >> 8) & 0xFF) - amount);
+        const B = Math.max(0, (num & 0xFF) - amount);
+        return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
+      },
+    };
+  }
+  </script>
+</body>
+</html>

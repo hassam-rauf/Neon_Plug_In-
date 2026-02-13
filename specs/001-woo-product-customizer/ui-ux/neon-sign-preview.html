@@ -1,0 +1,569 @@
+<html class="dark"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&amp;family=Pacifico&amp;family=Monoton&amp;family=Montserrat:wght@700&amp;family=Lobster&amp;family=Permanent+Marker&amp;family=Satisfy&amp;family=Righteous&amp;family=Fredoka+One&amp;family=Bangers&amp;family=Caveat:wght@700&amp;family=Courgette&amp;family=Kaushan+Script&amp;family=Allura&amp;family=Yellowtail&amp;family=Cinzel:wght@700&amp;family=Metal+Mania&amp;family=Syncopate:wght@700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                colors: {
+                    "primary": "#ff00ff",
+                    "neon-pink": "#ff00ff",
+                    "neon-blue": "#00f2ff",
+                    "neon-yellow": "#fbff00",
+                    "neon-green": "#39ff14",
+                    "neon-red": "#ff3131",
+                    "neon-orange": "#ff9100",
+                    "neon-purple": "#bc13fe",
+                    "neon-cyan": "#0ff0fc",
+                    "neon-lime": "#ccff00",
+                    "neon-warm-white": "#fff5e6",
+                    "neon-cool-white": "#f0f8ff",
+                    "neon-gold": "#ffd700",
+                    "neon-magenta": "#ff0090",
+                    "neon-indigo": "#4b0082",
+                    "neon-ice": "#a5f2f3",
+                    "background-dark": "#0a0a0c",
+                },
+                fontFamily: {
+                    "display": ["Inter", "sans-serif"],
+                    "cursive": ["Dancing Script", "cursive"],
+                    "script": ["Pacifico", "cursive"],
+                    "retro": ["Monoton", "cursive"],
+                    "lobster": ["Lobster", "cursive"],
+                    "marker": ["Permanent Marker", "cursive"],
+                    "satisfy": ["Satisfy", "cursive"],
+                    "righteous": ["Righteous", "cursive"],
+                    "fredoka": ["Fredoka One", "cursive"],
+                    "bangers": ["Bangers", "cursive"],
+                    "caveat": ["Caveat", "cursive"],
+                    "courgette": ["Courgette", "cursive"],
+                    "kaushan": ["Kaushan Script", "cursive"],
+                    "allura": ["Allura", "cursive"],
+                    "yellowtail": ["Yellowtail", "cursive"],
+                    "elegant": ["Cinzel", "serif"],
+                    "gothic": ["Metal Mania", "cursive"],
+                    "futura": ["Syncopate", "sans-serif"],
+                },
+            },
+        },
+    }
+</script>
+<style type="text/tailwindcss">
+    @layer base {
+        html, body {
+            @apply h-full;
+        }
+        body {
+            @apply bg-background-dark font-display text-white antialiased;
+        }
+        /* Only lock overflow on desktop */
+        @media (min-width: 1024px) {
+            html, body { overflow: hidden; }
+        }
+    }
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .neon-text-glow {
+        text-shadow: 0 0 5px #fff, 0 0 10px #fff, 0 0 20px var(--neon-color, #ff00ff), 0 0 40px var(--neon-color, #ff00ff), 0 0 60px var(--neon-color, #ff00ff);
+    }
+    .brick-wall {
+        background-color: #0f0f12;
+        background-image: linear-gradient(335deg, #0a0a0c 23px, transparent 23px),
+                          linear-gradient(155deg, #111114 23px, transparent 23px),
+                          linear-gradient(335deg, #0a0a0c 23px, transparent 23px),
+                          linear-gradient(155deg, #111114 23px, transparent 23px);
+        background-size: 58px 58px;
+        background-position: 0px 2px, 4px 35px, 29px 31px, 34px 6px;
+    }
+    .acrylic-box {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(8px);
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.02);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(255, 0, 255, 0.2);
+        border-radius: 10px;
+    }
+    input[type='range'] {
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        cursor: pointer;
+    }
+    input[type='range']::-webkit-slider-runnable-track {
+        background: rgba(255, 255, 255, 0.1);
+        height: 6px;
+        border-radius: 3px;
+    }
+    input[type='range']::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        height: 24px;
+        width: 24px;
+        background: #ff00ff;
+        border-radius: 50%;
+        margin-top: -9px;
+        box-shadow: 0 0 15px rgba(255, 0, 255, 0.8);
+        border: 2px solid white;
+    }
+
+    /* ============================================
+       RESPONSIVE LAYOUT SYSTEM
+       Mobile-first, viewport-locked on desktop
+       ============================================ */
+
+    /* Mobile: stacked layout, scrollable */
+    .editor-main {
+        display: flex;
+        flex-direction: column;
+        min-height: calc(100vh - 56px);
+        min-height: calc(100dvh - 56px);
+    }
+
+    /* Desktop: locked grid, no scroll */
+    @media (min-width: 1024px) {
+        .editor-main {
+            display: grid;
+            grid-template-columns: 1fr minmax(320px, 360px);
+            grid-template-rows: 1fr;
+            height: calc(100vh - 56px);
+            overflow: hidden;
+            min-height: 0;
+        }
+    }
+
+    @media (min-width: 1440px) {
+        .editor-main {
+            grid-template-columns: 1fr minmax(340px, 380px);
+        }
+    }
+
+    /* Preview Panel */
+    .preview-panel {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        min-height: 0;
+        /* Mobile: fixed height so controls visible below */
+        height: 45vh;
+        height: 45dvh;
+        flex-shrink: 0;
+    }
+    @media (min-width: 1024px) {
+        .preview-panel {
+            height: auto;
+            flex-shrink: unset;
+        }
+    }
+
+    /* Controls Panel - independent scroll */
+    .controls-panel {
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        min-height: 0;
+        flex: 1;
+    }
+    @media (min-width: 1024px) {
+        .controls-panel { flex: none; }
+    }
+
+    /* Preview content - centered with max constraints */
+    .preview-content {
+        max-width: 480px;
+        width: 100%;
+        margin: 0 auto;
+    }
+
+    @media (min-width: 1440px) {
+        .preview-content {
+            max-width: 520px;
+        }
+    }
+
+    /* Neon sign container - compact */
+    .neon-container {
+        padding: 1.5rem 2rem;
+    }
+
+    @media (min-width: 768px) {
+        .neon-container {
+            padding: 2rem 2.5rem;
+        }
+    }
+</style>
+</head>
+<body class="flex flex-col min-h-screen lg:h-screen lg:overflow-hidden" x-data="neonCustomizer()">
+
+<header class="flex items-center justify-between border-b border-white/10 bg-black/90 backdrop-blur-md px-4 md:px-6 h-14 flex-shrink-0 sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+        <span class="material-symbols-outlined text-primary text-3xl">lightbulb</span>
+        <div class="hidden sm:flex flex-col">
+            <h1 class="text-sm font-bold tracking-tight">Neon Customizer</h1>
+            <span class="text-[10px] text-gray-500 uppercase">Pro Sublimation Edition</span>
+        </div>
+    </div>
+    <div class="flex items-center gap-4">
+        <button @click="showPreviewModal = true" class="hidden sm:flex items-center gap-1.5 px-3 h-8 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold text-gray-400 hover:text-white hover:border-primary/50 transition-all">
+            <span class="material-symbols-outlined text-sm">preview</span>
+            Preview Design
+        </button>
+        <div class="hidden lg:flex items-center bg-white/5 rounded-full p-1 border border-white/10">
+            <button @click="viewMode = 'night'" :class="viewMode === 'night' ? 'bg-white/10 text-white' : 'text-gray-500'" class="px-3 py-1 rounded-full text-[10px] font-bold transition-all">NIGHT</button>
+            <button @click="viewMode = 'day'" :class="viewMode === 'day' ? 'bg-white/10 text-white' : 'text-gray-500'" class="px-3 py-1 rounded-full text-[10px] font-bold transition-all">DAY</button>
+        </div>
+        <div class="flex flex-col items-end">
+            <span class="text-[10px] text-gray-400 leading-none">Total</span>
+            <span class="text-base font-bold text-primary" x-text="'$' + totalPrice.toFixed(2)"></span>
+        </div>
+        <button @click="addToCart()" class="bg-primary hover:bg-primary/90 text-white text-xs font-bold px-4 h-10 rounded-lg shadow-lg shadow-primary/20 transition-all flex items-center gap-2">
+            <span class="material-symbols-outlined text-sm">shopping_cart</span>
+            <span class="hidden sm:inline uppercase">Add to Cart</span>
+        </button>
+    </div>
+</header>
+
+<main class="editor-main">
+    <!-- Preview Panel - Constrained Width -->
+    <section class="preview-panel relative brick-wall flex items-center justify-center overflow-hidden border-b lg:border-b-0 lg:border-r border-white/10" :class="viewMode === 'day' ? 'bg-gray-200' : ''">
+        <!-- Toolbar -->
+        <div class="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
+            <button @click="zoomLevel = Math.min(zoomLevel + 0.1, 2)" class="p-1.5 bg-black/60 border border-white/10 rounded-lg text-white hover:bg-black/80 transition-all"><span class="material-symbols-outlined text-base">zoom_in</span></button>
+            <button @click="zoomLevel = Math.max(zoomLevel - 0.1, 0.5)" class="p-1.5 bg-black/60 border border-white/10 rounded-lg text-white hover:bg-black/80 transition-all"><span class="material-symbols-outlined text-base">zoom_out</span></button>
+            <button @click="showGrid = !showGrid" :class="showGrid ? 'bg-primary/30 border-primary' : ''" class="p-1.5 bg-black/60 border border-white/10 rounded-lg text-white hover:bg-black/80 transition-all"><span class="material-symbols-outlined text-base">grid_on</span></button>
+        </div>
+
+        <!-- Centered Preview Content -->
+        <div class="preview-content px-4 flex flex-col items-center" :style="'transform: scale(' + zoomLevel + ')'">
+            <div class="absolute inset-0 opacity-20 bg-gradient-to-t from-primary/30 to-transparent blur-3xl rounded-full pointer-events-none" :style="'--tw-gradient-from: ' + selectedColor + '30'"></div>
+            <div class="relative z-10 acrylic-box neon-container rounded-xl w-full text-center" :class="mountStyle === 'contour' ? 'bg-transparent border-0' : ''">
+                <h2 class="neon-text-glow break-words leading-tight text-2xl sm:text-3xl md:text-4xl"
+                    :class="selectedFont.class"
+                    :style="'--neon-color: ' + selectedColor + '; opacity: ' + (glowIntensity / 100)"
+                    x-text="signText || 'Your Text'">
+                </h2>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-3 bg-black/80 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 text-[9px] font-bold text-gray-400 uppercase tracking-wider whitespace-nowrap">
+            <span x-text="'Size: ' + calculatedSize"></span>
+            <div class="w-px h-2.5 bg-white/20"></div>
+            <span class="text-primary" x-text="selectedColorName"></span>
+            <div class="w-px h-2.5 bg-white/20"></div>
+            <span x-text="mountStyle === 'box' ? 'Box' : 'Contour'"></span>
+        </div>
+    </section>
+
+    <!-- Controls Panel - Fixed Width, Always Visible -->
+    <aside class="controls-panel bg-[#0c0c0e] flex flex-col">
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-5 space-y-5">
+            <!-- Text Input -->
+            <section class="space-y-2">
+                <div class="flex items-center justify-between">
+                    <label class="text-[10px] font-black uppercase tracking-[0.08em] text-gray-500 flex items-center gap-1.5">
+                        <span class="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[9px]">1</span>
+                        Your Text
+                    </label>
+                    <span class="text-[9px] text-gray-600" x-text="signText.length + '/20'"></span>
+                </div>
+                <input x-model="signText" maxlength="20" class="w-full h-10 px-3 bg-white/5 border border-white/10 rounded-lg text-sm font-medium focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all placeholder:text-gray-700" placeholder="Type here..." type="text"/>
+            </section>
+
+            <!-- Font Selection - Compact Grid -->
+            <section class="space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-[0.08em] text-gray-500 flex items-center gap-1.5">
+                    <span class="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[9px]">2</span>
+                    Font Style
+                </label>
+                <div class="grid grid-cols-5 gap-1.5">
+                    <template x-for="font in fonts" :key="font.id">
+                        <button @click="selectedFont = font"
+                                :class="selectedFont.id === font.id ? 'border-2 border-primary bg-primary/10' : 'border border-white/5 bg-white/[0.03] hover:bg-white/[0.06] hover:border-white/20'"
+                                class="aspect-square rounded-lg flex flex-col items-center justify-center transition-all group">
+                            <span class="text-lg" :class="font.class">Aa</span>
+                            <span :class="selectedFont.id === font.id ? 'text-primary' : 'text-gray-600'" class="text-[7px] font-bold uppercase mt-0.5 truncate w-full text-center px-0.5" x-text="font.name"></span>
+                        </button>
+                    </template>
+                </div>
+            </section>
+
+            <!-- Color Selection - Compact -->
+            <section class="space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-[0.08em] text-gray-500 flex items-center gap-1.5">
+                    <span class="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[9px]">3</span>
+                    Neon Color
+                </label>
+                <div class="grid grid-cols-7 gap-2">
+                    <template x-for="color in colors" :key="color.hex">
+                        <button @click="selectedColor = color.hex; selectedColorName = color.name" class="flex flex-col items-center group">
+                            <div class="w-8 h-8 rounded-full border transition-all"
+                                 :class="selectedColor === color.hex ? 'border-2 border-white ring-2 ring-primary/20 shadow-[0_0_12px_rgba(255,0,255,0.4)] scale-110' : 'border-white/10 opacity-60 hover:opacity-100 hover:scale-105'"
+                                 :style="'background-color: ' + color.hex"></div>
+                        </button>
+                    </template>
+                </div>
+            </section>
+
+            <!-- Glow Intensity - Compact -->
+            <section class="space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-[0.08em] text-gray-500 flex items-center gap-1.5">
+                    <span class="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[9px]">4</span>
+                    Glow
+                </label>
+                <div class="bg-white/[0.03] border border-white/10 p-3 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-gray-600 text-lg">blur_off</span>
+                        <input x-model="glowIntensity" class="flex-1 accent-primary" max="100" min="0" type="range"/>
+                        <span class="material-symbols-outlined text-primary text-lg drop-shadow-[0_0_8px_#ff00ff]">flare</span>
+                        <span class="text-[10px] text-primary font-bold w-8 text-right" x-text="glowIntensity + '%'"></span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Mounting Style - Compact -->
+            <section class="space-y-2">
+                <label class="text-[10px] font-black uppercase tracking-[0.08em] text-gray-500 flex items-center gap-1.5">
+                    <span class="w-4 h-4 rounded-full bg-primary/20 text-primary flex items-center justify-center text-[9px]">5</span>
+                    Mount
+                </label>
+                <div class="flex gap-2">
+                    <button @click="mountStyle = 'contour'"
+                            :class="mountStyle === 'contour' ? 'bg-primary/10 border-2 border-primary' : 'bg-white/5 border border-white/10 hover:border-primary/50'"
+                            class="flex-1 h-10 flex items-center justify-center gap-1.5 rounded-lg transition-all">
+                        <span class="material-symbols-outlined text-sm">crop_free</span>
+                        <span class="text-[9px] font-bold uppercase">Contour</span>
+                    </button>
+                    <button @click="mountStyle = 'box'"
+                            :class="mountStyle === 'box' ? 'bg-primary/10 border-2 border-primary' : 'bg-white/5 border border-white/10 hover:border-primary/50'"
+                            class="flex-1 h-10 flex items-center justify-center gap-1.5 rounded-lg transition-all">
+                        <span class="material-symbols-outlined text-sm">square</span>
+                        <span class="text-[9px] font-bold uppercase">Box</span>
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- Footer with Price - Compact -->
+        <div class="p-4 border-t border-white/10 bg-black/80 backdrop-blur-xl flex-shrink-0">
+            <div class="flex items-center justify-between mb-3">
+                <div>
+                    <span class="text-[8px] text-gray-500 font-bold uppercase block tracking-wider">Total</span>
+                    <span class="text-xl font-black text-primary" x-text="'$' + totalPrice.toFixed(2)"></span>
+                </div>
+                <div class="text-right">
+                    <div class="flex items-center justify-end gap-1 text-neon-green">
+                        <span class="material-symbols-outlined text-xs">bolt</span>
+                        <span class="text-[8px] font-bold uppercase">Fast Ship</span>
+                    </div>
+                    <span class="text-[8px] text-gray-600 uppercase">3 days</span>
+                </div>
+            </div>
+            <button @click="addToCart()" class="w-full h-10 bg-primary text-white rounded-lg font-bold text-xs shadow-lg shadow-primary/20 hover:shadow-primary/40 active:scale-[0.98] transition-all flex items-center justify-center gap-2 uppercase tracking-wide">
+                <span class="material-symbols-outlined text-base">shopping_bag</span>
+                Add to Cart
+            </button>
+        </div>
+    </aside>
+</main>
+
+<footer class="hidden xl:flex bg-black border-t border-white/5 px-6 h-8 items-center justify-between text-[8px] font-medium text-gray-600 uppercase tracking-[0.12em] flex-shrink-0">
+    <div class="flex gap-4">
+        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px] text-primary">verified</span> Handcrafted</span>
+        <span class="flex items-center gap-1"><span class="material-symbols-outlined text-[10px] text-primary">bolt</span> 12V Included</span>
+    </div>
+    <div class="flex gap-4">
+        <span>50K+ Hours</span>
+        <span>2yr Warranty</span>
+    </div>
+</footer>
+
+<!-- Preview Design Modal -->
+<div x-show="showPreviewModal" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+     class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-6" @click.self="showPreviewModal = false">
+  <div class="bg-[#0c0c0e] border border-white/10 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" @click.stop>
+    <div class="flex items-center justify-between p-5 border-b border-white/10">
+      <div>
+        <h3 class="text-base font-bold text-white">Design Preview</h3>
+        <p class="text-xs text-gray-500">Your neon sign summary</p>
+      </div>
+      <button @click="showPreviewModal = false" class="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 transition-colors">
+        <span class="material-symbols-outlined text-sm text-gray-400">close</span>
+      </button>
+    </div>
+
+    <!-- Night Preview -->
+    <div class="p-6">
+      <p class="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-3">Night View</p>
+      <div class="brick-wall rounded-xl p-8 flex items-center justify-center">
+        <div class="acrylic-box rounded-xl p-6 w-full text-center" :class="mountStyle === 'contour' ? 'bg-transparent border-0' : ''">
+          <h2 class="neon-text-glow break-words leading-tight text-3xl md:text-4xl"
+              :class="selectedFont.class"
+              :style="'--neon-color: ' + selectedColor + '; opacity: ' + (glowIntensity / 100)"
+              x-text="signText || 'Your Text'"></h2>
+        </div>
+      </div>
+    </div>
+
+    <!-- Day Preview -->
+    <div class="px-6 pb-6">
+      <p class="text-[9px] font-bold text-gray-500 uppercase tracking-widest mb-3">Day View</p>
+      <div class="bg-gray-200 rounded-xl p-8 flex items-center justify-center">
+        <div class="bg-white/50 rounded-xl p-6 w-full text-center border border-gray-300" :class="mountStyle === 'contour' ? 'bg-transparent border-0' : ''">
+          <h2 class="break-words leading-tight text-3xl md:text-4xl"
+              :class="selectedFont.class"
+              :style="'color: ' + selectedColor"
+              x-text="signText || 'Your Text'"></h2>
+        </div>
+      </div>
+    </div>
+
+    <!-- Specs Summary -->
+    <div class="px-6 pb-6">
+      <div class="bg-white/[0.03] border border-white/10 rounded-xl p-4 space-y-3">
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-400">Text</span>
+          <span class="font-bold text-white" x-text="signText || '—'"></span>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-400">Font</span>
+          <span class="font-bold text-white" x-text="selectedFont.name"></span>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-400">Color</span>
+          <span class="flex items-center gap-2"><span class="w-3 h-3 rounded-full" :style="'background:' + selectedColor"></span><span class="font-bold text-white" x-text="selectedColorName"></span></span>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-400">Glow</span>
+          <span class="font-bold text-white" x-text="glowIntensity + '%'"></span>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-400">Mount</span>
+          <span class="font-bold text-white" x-text="mountStyle === 'box' ? 'Acrylic Box' : 'Contour Cut'"></span>
+        </div>
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-400">Size</span>
+          <span class="font-bold text-white" x-text="calculatedSize"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="p-5 border-t border-white/10 flex items-center justify-between">
+      <div>
+        <span class="text-[8px] text-gray-500 font-bold uppercase tracking-wider">Total</span>
+        <div class="text-xl font-black text-primary" x-text="'$' + totalPrice.toFixed(2)"></div>
+      </div>
+      <div class="flex gap-3">
+        <button @click="showPreviewModal = false" class="px-4 py-2 rounded-lg border border-white/10 text-xs font-bold text-gray-400 hover:text-white hover:border-white/20 transition-colors">Close</button>
+        <button @click="showPreviewModal = false; addToCart()" class="px-5 py-2 rounded-lg bg-primary text-white text-xs font-bold flex items-center gap-2 hover:bg-primary/90 transition-colors">
+          <span class="material-symbols-outlined text-sm">shopping_bag</span>Add to Cart
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function neonCustomizer() {
+    return {
+        signText: 'Neon Vibe',
+        showPreviewModal: false,
+        viewMode: 'night',
+        zoomLevel: 1,
+        showGrid: false,
+        glowIntensity: 85,
+        mountStyle: 'box',
+        selectedColor: '#ff00ff',
+        selectedColorName: 'Neon Pink',
+
+        fonts: [
+            { id: 'script', name: 'Script', class: 'font-cursive' },
+            { id: 'retro', name: 'Retro', class: 'font-retro' },
+            { id: 'neon', name: 'Neon', class: 'font-righteous' },
+            { id: 'sans', name: 'Sans', class: 'font-bold font-display' },
+            { id: 'bold', name: 'Bold', class: 'font-lobster' },
+            { id: 'marker', name: 'Marker', class: 'font-marker' },
+            { id: 'modern', name: 'Modern', class: 'font-courgette' },
+            { id: 'elegant', name: 'Elegant', class: 'font-elegant' },
+            { id: 'futura', name: 'Futura', class: 'font-futura tracking-tighter' },
+            { id: 'gothic', name: 'Gothic', class: 'font-gothic' }
+        ],
+        selectedFont: { id: 'script', name: 'Script', class: 'font-cursive' },
+
+        colors: [
+            { hex: '#ff00ff', name: 'Neon Pink' },
+            { hex: '#00f2ff', name: 'Neon Blue' },
+            { hex: '#fbff00', name: 'Neon Yellow' },
+            { hex: '#39ff14', name: 'Neon Green' },
+            { hex: '#ff3131', name: 'Neon Red' },
+            { hex: '#ff9100', name: 'Neon Orange' },
+            { hex: '#bc13fe', name: 'Neon Purple' },
+            { hex: '#0ff0fc', name: 'Neon Cyan' },
+            { hex: '#ff0090', name: 'Neon Magenta' },
+            { hex: '#ffd700', name: 'Neon Gold' },
+            { hex: '#fff5e6', name: 'Warm White' },
+            { hex: '#f0f8ff', name: 'Cool White' },
+            { hex: '#a5f2f3', name: 'Neon Ice' },
+            { hex: '#ffffff', name: 'Pure White' }
+        ],
+
+        get calculatedSize() {
+            const len = this.signText.length || 1;
+            const width = Math.min(48, Math.max(12, len * 2.5));
+            return width + '" x 12"';
+        },
+
+        get totalPrice() {
+            let base = 89;
+            // Price per character
+            base += (this.signText.length || 0) * 5;
+            // Mount style premium
+            if (this.mountStyle === 'box') base += 30;
+            // Font premium for special fonts
+            if (['retro', 'gothic', 'elegant'].includes(this.selectedFont.id)) base += 20;
+            return base;
+        },
+
+        addToCart() {
+            const item = {
+                text: this.signText,
+                font: this.selectedFont.name,
+                color: this.selectedColorName,
+                colorHex: this.selectedColor,
+                mount: this.mountStyle,
+                glow: this.glowIntensity,
+                size: this.calculatedSize,
+                price: this.totalPrice
+            };
+
+            // Get existing cart or create new
+            let cart = JSON.parse(localStorage.getItem('neonCart') || '[]');
+            cart.push(item);
+            localStorage.setItem('neonCart', JSON.stringify(cart));
+
+            alert('Added to cart!\n\n' +
+                  'Text: ' + item.text + '\n' +
+                  'Font: ' + item.font + '\n' +
+                  'Color: ' + item.color + '\n' +
+                  'Mount: ' + item.mount + '\n' +
+                  'Price: $' + item.price.toFixed(2));
+        }
+    }
+}
+</script>
+
+</body></html>
