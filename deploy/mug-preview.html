@@ -187,7 +187,12 @@
                          class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded text-[11px] font-medium cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 whitespace-nowrap flex-shrink-0">
                     Choose File
                   </label>
-                  <span class="text-[10px] text-gray-400 truncate" x-text="getZoneImageName(zone.id) || 'No file chosen'"></span>
+                  <span class="text-[10px] text-gray-400 truncate flex-1" x-text="getZoneImageName(zone.id) || 'No file chosen'"></span>
+                  <button x-show="layers[zone.id]?.some(l => l.type === 'image')"
+                          @click.stop="switchZone(zone.id); removeZoneImage(zone.id)"
+                          class="text-red-400 hover:text-red-600 flex-shrink-0" title="Remove image">
+                    <span class="material-symbols-outlined text-sm">close</span>
+                  </button>
                   <input :id="'zone-upload-' + zone.id" type="file" accept="image/png,image/jpeg,image/webp"
                          @click.stop
                          @change="switchZone(zone.id); handleFileUpload($event)" class="hidden">
@@ -408,7 +413,10 @@
       zonePrintAreas: {},  // cached print area per zone canvas
       _rotateStartAngle: 0,
       _rotateStartRotation: 0,
+      _rotateCenterX: 0,
+      _rotateCenterY: 0,
       _resizeStartScale: 100,
+      _resizeStartFontSize: 32,
       _resizeStartPos: null,
 
       // ===== MUG SHAPE (px on 600x500 canvas) =====
@@ -1124,6 +1132,15 @@
         const imgLayer = (this.layers[id] || []).find(l => l.type === 'image');
         return imgLayer ? (imgLayer.fileName || 'image.png') : null;
       },
+      removeZoneImage(id) {
+        const removed = (this.layers[id] || []).filter(l => l.type === 'image');
+        this.layers[id] = (this.layers[id] || []).filter(l => l.type !== 'image');
+        removed.forEach(l => { delete this.loadedImages[l.id]; });
+        if (this.selectedLayerId && removed.some(l => l.id === this.selectedLayerId)) this.selectedLayerId = null;
+        this.renderCanvas();
+        this.renderAllZoneCanvases();
+        this.saveToStorage();
+      },
 
       // ===== THUMBNAILS =====
       updateThumbnails() {
@@ -1196,9 +1213,9 @@
       renderAllZoneCanvases() {
         if (this.selectedMugType === 'fullwrap') return;
         const configs = [
-          { canvasId: 'main_front', zoneId: 'front', handleSide: 'right' },
-          { canvasId: 'main_rear',  zoneId: 'rear',  handleSide: 'none' },
-          { canvasId: 'main_back',  zoneId: 'back',  handleSide: 'left' },
+          { canvasId: 'main_front', zoneId: 'front', handleSide: 'right', neighbors: { left: 'back', right: 'rear' } },
+          { canvasId: 'main_rear',  zoneId: 'rear',  handleSide: 'none',  neighbors: { left: 'front', right: 'back' } },
+          { canvasId: 'main_back',  zoneId: 'back',  handleSide: 'left',  neighbors: { left: 'rear', right: 'front' } },
         ];
         configs.forEach(cfg => {
           const pc = document.getElementById(cfg.canvasId);
@@ -1217,7 +1234,7 @@
           const printArea = { x: tl.x + 2, y: tl.y + 4, w: tr.x - tl.x - 4, h: mugH - 8 };
           this.zonePrintAreas[cfg.zoneId] = printArea;
 
-          this._drawPreviewMug(ctx, W, H, cfg.zoneId, cfg.handleSide);
+          this._drawPreviewMug(ctx, W, H, cfg.zoneId, cfg.handleSide, cfg.neighbors);
 
           // Draw selection UI on active zone's selected layer
           if (cfg.zoneId === this.currentZone && this.selectedLayerId) {
@@ -1233,51 +1250,70 @@
       _drawZoneSelectionUI(ctx, layer) {
         const b = layer._zoneBounds;
         if (!b) return;
-        const pad = 6;
-        const x = b.x - pad, y = b.y - pad, w = b.w + pad*2, h = b.h + pad*2;
+        const pad = 8;
+        const hw = b.dw / 2 + pad, hh = b.dh / 2 + pad;
+        const rot = (layer.rotation || 0) * Math.PI / 180;
+        const cos = Math.cos(rot), sin = Math.sin(rot);
+
+        // Transform local coords to canvas coords (rotated around center)
+        const tx = (lx, ly) => ({ x: b.cx + lx * cos - ly * sin, y: b.cy + lx * sin + ly * cos });
+
+        // Corner points in local space (before rotation)
+        const localCorners = [
+          { id: 'tl', lx: -hw, ly: -hh },
+          { id: 'tr', lx:  hw, ly: -hh },
+          { id: 'br', lx:  hw, ly:  hh },
+          { id: 'bl', lx: -hw, ly:  hh },
+        ];
+        const corners = localCorners.map(c => ({ id: c.id, ...tx(c.lx, c.ly) }));
+        // rename to cx/cy for handle storage
+        const cornersForHandles = corners.map(c => ({ id: c.id, cx: c.x, cy: c.y }));
 
         ctx.save();
-        // Dashed selection border
+        // Dashed selection border (rotated)
         ctx.strokeStyle = '#308ce8';
         ctx.lineWidth = 2;
         ctx.setLineDash([6, 3]);
-        ctx.strokeRect(x, y, w, h);
+        ctx.beginPath();
+        ctx.moveTo(corners[0].x, corners[0].y);
+        corners.forEach((c, i) => { if (i > 0) ctx.lineTo(c.x, c.y); });
+        ctx.closePath();
+        ctx.stroke();
         ctx.setLineDash([]);
 
         // Corner resize handles
         ctx.fillStyle = '#ffffff';
         ctx.strokeStyle = '#308ce8';
         ctx.lineWidth = 2;
-        const hs = 8; // handle size
-        const corners = [
-          { id: 'tl', cx: x, cy: y },
-          { id: 'tr', cx: x + w, cy: y },
-          { id: 'bl', cx: x, cy: y + h },
-          { id: 'br', cx: x + w, cy: y + h },
-        ];
+        const hs = 10;
         corners.forEach(c => {
           ctx.beginPath();
-          ctx.arc(c.cx, c.cy, hs/2, 0, Math.PI * 2);
+          ctx.arc(c.x, c.y, hs/2, 0, Math.PI * 2);
           ctx.fill();
           ctx.stroke();
         });
 
-        // Rotation handle (circle above top-center)
-        const rotX = x + w/2, rotY = y - 25;
-        // Line from top to rotation handle
+        // Rotation handle (above top-center, along rotated up direction)
+        const topMid = tx(0, -hh);
+        const rotHandle = tx(0, -hh - 35);
+        const rotX = rotHandle.x, rotY = rotHandle.y;
+        // Line from top-center to rotation handle
         ctx.beginPath();
-        ctx.moveTo(x + w/2, y);
+        ctx.moveTo(topMid.x, topMid.y);
         ctx.lineTo(rotX, rotY);
         ctx.strokeStyle = '#308ce8';
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 2;
         ctx.stroke();
         // Rotation circle
         ctx.beginPath();
-        ctx.arc(rotX, rotY, 8, 0, Math.PI * 2);
+        ctx.arc(rotX, rotY, 12, 0, Math.PI * 2);
         ctx.fillStyle = '#308ce8';
         ctx.fill();
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 10px sans-serif';
+        ctx.font = 'bold 14px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText('↻', rotX, rotY);
@@ -1285,7 +1321,7 @@
         ctx.restore();
 
         // Store handle positions for hit testing
-        layer._handles = { corners, rotX, rotY, hs, selRect: { x, y, w, h } };
+        layer._handles = { corners: cornersForHandles, rotX, rotY, hs, selRect: { x: b.cx - hw, y: b.cy - hh, w: hw*2, h: hh*2 } };
       },
 
       // ===== ZONE CANVAS EVENTS (drag, resize, rotate on main_* canvases) =====
@@ -1312,7 +1348,17 @@
             for (const layer of zoneLayers) {
               if (!layer.visible || !layer._zoneBounds) continue;
               const b = layer._zoneBounds;
-              if (pos.x >= b.x - 12 && pos.x <= b.x + b.w + 12 && pos.y >= b.y - 12 && pos.y <= b.y + b.h + 12) return layer;
+              // Rotate the click point into the layer's local coordinate system
+              const rot = (layer.rotation || 0) * Math.PI / 180;
+              const cos = Math.cos(-rot), sin = Math.sin(-rot);
+              const relX = pos.x - b.cx, relY = pos.y - b.cy;
+              const localX = Math.abs(relX * cos - relY * sin);
+              const localY = Math.abs(relX * sin + relY * cos);
+              // Generous padding for easy clicking (extra for text)
+              const pad = layer.type === 'text' ? 25 : 15;
+              const halfW = b.dw / 2 + pad;
+              const halfH = b.dh / 2 + pad;
+              if (localX <= halfW && localY <= halfH) return layer;
             }
             return null;
           };
@@ -1323,14 +1369,14 @@
             if (!layer || !layer._handles) return null;
             const h = layer._handles;
 
-            // Check rotation handle
+            // Check rotation handle (generous 20px radius)
             const rdx = pos.x - h.rotX, rdy = pos.y - h.rotY;
-            if (Math.sqrt(rdx*rdx + rdy*rdy) < 14) return 'rotate';
+            if (Math.sqrt(rdx*rdx + rdy*rdy) < 20) return 'rotate';
 
-            // Check corner handles
+            // Check corner handles (generous 14px radius)
             for (const c of h.corners) {
               const dx = pos.x - c.cx, dy = pos.y - c.cy;
-              if (Math.sqrt(dx*dx + dy*dy) < 10) return c.id;
+              if (Math.sqrt(dx*dx + dy*dy) < 14) return c.id;
             }
             return null;
           };
@@ -1351,8 +1397,14 @@
               if (handle === 'rotate') {
                 this.isRotatingLayer = true;
                 const layer = this.getLayerById(this.selectedLayerId);
-                if (layer && layer._zoneBounds) {
-                  this._rotateStartAngle = Math.atan2(pos.y - layer._zoneBounds.cy, pos.x - layer._zoneBounds.cx);
+                if (layer) {
+                  // Use print area center as fixed rotation reference (not bounds which shift)
+                  const pa = this.zonePrintAreas[cfg.zoneId];
+                  const rcx = pa.x + (layer.posX || 0.5) * pa.w;
+                  const rcy = pa.y + (layer.posY || 0.5) * pa.h;
+                  this._rotateCenterX = rcx;
+                  this._rotateCenterY = rcy;
+                  this._rotateStartAngle = Math.atan2(pos.y - rcy, pos.x - rcx);
                   this._rotateStartRotation = layer.rotation || 0;
                 }
                 this.dragStart = pos;
@@ -1363,7 +1415,8 @@
                 const layer = this.getLayerById(this.selectedLayerId);
                 if (layer) {
                   this._resizeStartScale = layer.scalePercent || 100;
-                  this._resizeStartPos = pos;
+                  this._resizeStartFontSize = layer.fontSize || 32;
+                  this._resizeStartPos = { ...pos };
                 }
                 this.dragStart = pos;
                 return;
@@ -1386,32 +1439,32 @@
               const pa = this.zonePrintAreas[cfg.zoneId];
               if (!pa) return;
 
-              if (this.isRotatingLayer && layer._zoneBounds) {
-                const b = layer._zoneBounds;
-                const currentAngle = Math.atan2(pos.y - b.cy, pos.x - b.cx);
-                const deltaAngle = (currentAngle - (this._rotateStartAngle || 0)) * 180 / Math.PI;
+              if (this.isRotatingLayer) {
+                // Use the fixed center captured at mousedown (stable reference)
+                const rcx = this._rotateCenterX;
+                const rcy = this._rotateCenterY;
+                const currentAngle = Math.atan2(pos.y - rcy, pos.x - rcx);
+                const deltaAngle = (currentAngle - this._rotateStartAngle) * 180 / Math.PI;
                 layer.rotation = Math.round(this._rotateStartRotation + deltaAngle);
                 this.renderCanvas();
                 this.renderAllZoneCanvases();
 
               } else if (this.isResizingLayer) {
-                const dx = pos.x - this.dragStart.x;
-                const dy = pos.y - this.dragStart.y;
-                // Use diagonal distance for uniform scaling
+                // Calculate total distance from the start position (not incremental)
+                const totalDx = pos.x - this._resizeStartPos.x;
+                const totalDy = pos.y - this._resizeStartPos.y;
                 let dist;
-                if (this.resizeHandle === 'br') dist = dx + dy;
-                else if (this.resizeHandle === 'tl') dist = -(dx + dy);
-                else if (this.resizeHandle === 'tr') dist = dx - dy;
-                else dist = -dx + dy; // bl
-                const scaleDelta = dist * 0.5;
-                const newScale = Math.max(10, Math.min(300, (layer.scalePercent || 100) + scaleDelta));
-                layer.scalePercent = newScale;
+                if (this.resizeHandle === 'br') dist = totalDx + totalDy;
+                else if (this.resizeHandle === 'tl') dist = -(totalDx + totalDy);
+                else if (this.resizeHandle === 'tr') dist = totalDx - totalDy;
+                else dist = -totalDx + totalDy; // bl
+                // Scale proportionally from start value
+                const scaleFactor = dist / 150; // 150px drag = 100% scale change
+                const newScale = Math.max(10, Math.min(400, this._resizeStartScale + this._resizeStartScale * scaleFactor));
+                layer.scalePercent = Math.round(newScale);
                 if (layer.type === 'text') {
-                  // For text, also adjust fontSize
-                  const baseFontSize = 32;
-                  layer.fontSize = Math.max(8, Math.min(120, Math.round(baseFontSize * newScale / 100)));
+                  layer.fontSize = Math.max(8, Math.min(150, Math.round(this._resizeStartFontSize * newScale / this._resizeStartScale)));
                 }
-                this.dragStart = pos;
                 this.renderCanvas();
                 this.renderAllZoneCanvases();
 
@@ -1482,7 +1535,7 @@
         });
       },
 
-      _drawPreviewMug(ctx, W, H, zoneId, handleSide) {
+      _drawPreviewMug(ctx, W, H, zoneId, handleSide, neighbors) {
         const bodyColor = this.selectedColor;
         const handleColor = this.selectedHandleColor;
 
@@ -1584,6 +1637,38 @@
         ctx.clip();
         this._drawPreviewZoneLayers(ctx, print, zoneId);
 
+        // Draw neighbor zone bleed on edges (wrap-around effect)
+        if (neighbors) {
+          const bleedFraction = 0.15; // 15% of print width
+          const bleedW = print.w * bleedFraction;
+
+          // Left neighbor bleed
+          if (neighbors.left) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(print.x, print.y, bleedW, print.h);
+            ctx.clip();
+            // Draw the neighbor's layers shifted so their RIGHT edge aligns with our left bleed
+            const neighborPrint = { x: print.x - print.w + bleedW, y: print.y, w: print.w, h: print.h };
+            ctx.globalAlpha = 0.85;
+            this._drawPreviewZoneLayers(ctx, neighborPrint, neighbors.left, false);
+            ctx.restore();
+          }
+
+          // Right neighbor bleed
+          if (neighbors.right) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(print.x + print.w - bleedW, print.y, bleedW, print.h);
+            ctx.clip();
+            // Draw the neighbor's layers shifted so their LEFT edge aligns with our right bleed
+            const neighborPrint = { x: print.x + print.w - bleedW, y: print.y, w: print.w, h: print.h };
+            ctx.globalAlpha = 0.85;
+            this._drawPreviewZoneLayers(ctx, neighborPrint, neighbors.right, false);
+            ctx.restore();
+          }
+        }
+
         const curveGrad = ctx.createLinearGradient(tl.x, 0, tr.x, 0);
         curveGrad.addColorStop(0, 'rgba(255,255,255,0.22)');
         curveGrad.addColorStop(0.15, 'rgba(255,255,255,0.08)');
@@ -1652,12 +1737,16 @@
         ctx.restore();
       },
 
-      _drawPreviewZoneLayers(ctx, pa, zoneId) {
+      _drawPreviewZoneLayers(ctx, pa, zoneId, updateBounds) {
         const zl = this.layers[zoneId];
         if (!zl) return;
         zl.forEach(layer => {
           if (!layer.visible) return;
           ctx.save();
+          const cx = pa.x + (layer.posX || 0.5) * pa.w;
+          const cy = pa.y + (layer.posY || 0.5) * pa.h;
+          const rot = (layer.rotation || 0) * Math.PI / 180;
+
           if (layer.type === 'image' && this.loadedImages[layer.id]) {
             const img = this.loadedImages[layer.id];
             const scale = (layer.scalePercent || 100) / 100;
@@ -1670,21 +1759,23 @@
               const r = Math.min((pa.w * 0.9) / img.width, (pa.h * 0.9) / img.height, 1);
               dw = img.width * r * scale; dh = img.height * r * scale;
             }
-            const cx = pa.x + (layer.posX || 0.5) * pa.w;
-            const cy = pa.y + (layer.posY || 0.5) * pa.h;
             ctx.translate(cx, cy);
-            ctx.rotate((layer.rotation || 0) * Math.PI / 180);
+            ctx.rotate(rot);
             ctx.scale(layer.flipH ? -1 : 1, layer.flipV ? -1 : 1);
             ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
-            layer._zoneBounds = { x: cx - dw/2, y: cy - dh/2, w: dw, h: dh, cx, cy, dw, dh };
+            // Only update bounds on primary draw (not bleed neighbor draws)
+            if (updateBounds !== false) {
+              layer._zoneBounds = { x: cx - dw/2, y: cy - dh/2, w: dw, h: dh, cx, cy, dw, dh };
+            }
           } else if (layer.type === 'text') {
             const fs = Math.round((layer.fontSize || 32) * (pa.h / 400));
             ctx.font = `${layer.italic ? 'italic ' : ''}${layer.bold ? 'bold' : 'normal'} ${fs}px ${layer.fontFamily || 'Inter'}`;
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            const cx = pa.x + (layer.posX || 0.5) * pa.w;
-            const cy = pa.y + (layer.posY || 0.5) * pa.h;
+            const metrics = ctx.measureText(layer.content);
+            const tw = Math.max(metrics.width, 40); // minimum 40px width for easy clicking
+            const th = Math.max(fs * 1.4, 30); // minimum 30px height for easy clicking
             ctx.translate(cx, cy);
-            ctx.rotate((layer.rotation || 0) * Math.PI / 180);
+            ctx.rotate(rot);
             if (layer.stroke) {
               ctx.strokeStyle = layer.strokeColor || '#000000';
               ctx.lineWidth = Math.max(1, fs / 8);
@@ -1693,10 +1784,10 @@
             }
             ctx.fillStyle = layer.color || '#ffffff';
             ctx.fillText(layer.content, 0, 0);
-            const metrics = ctx.measureText(layer.content);
-            const tw = metrics.width;
-            const th = fs * 1.2;
-            layer._zoneBounds = { x: cx - tw/2, y: cy - th/2, w: tw, h: th, cx, cy, dw: tw, dh: th };
+            // Only update bounds on primary draw (not bleed neighbor draws)
+            if (updateBounds !== false) {
+              layer._zoneBounds = { x: cx - tw/2, y: cy - th/2, w: tw, h: th, cx, cy, dw: tw, dh: th };
+            }
           }
           ctx.restore();
         });
