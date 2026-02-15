@@ -117,12 +117,12 @@
             <button @click="exportAs('pdf'); open = false" class="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3">
               <span class="material-symbols-outlined text-lg text-red-500">picture_as_pdf</span> Export PDF
             </button>
+            <div class="border-t border-gray-200 dark:border-gray-700"></div>
+            <button @click="showPreviewModal = true; open = false" class="w-full px-4 py-3 text-left text-sm hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-3">
+              <span class="material-symbols-outlined text-lg text-purple-500">preview</span> Preview All
+            </button>
           </div>
         </div>
-        <button @click="showPreviewModal = true" class="flex items-center gap-1 px-2 md:px-4 py-1.5 md:py-2 bg-gray-100 dark:bg-gray-700 rounded-lg font-bold text-xs md:text-sm hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-          <span class="material-symbols-outlined text-lg">preview</span>
-          <span class="hidden md:inline">Preview All</span>
-        </button>
         <button @click="darkMode = !darkMode" class="p-1.5 md:p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700">
           <span class="material-symbols-outlined text-xl" x-text="darkMode ? 'light_mode' : 'dark_mode'"></span>
         </button>
