@@ -401,7 +401,15 @@
       ctx: null,
       loadedImages: {},
       isDraggingLayer: false,
+      isResizingLayer: false,
+      isRotatingLayer: false,
+      resizeHandle: null,  // 'tl','tr','bl','br'
       dragStart: { x: 0, y: 0 },
+      zonePrintAreas: {},  // cached print area per zone canvas
+      _rotateStartAngle: 0,
+      _rotateStartRotation: 0,
+      _resizeStartScale: 100,
+      _resizeStartPos: null,
 
       // ===== MUG SHAPE (px on 600x500 canvas) =====
       mug: {
@@ -492,6 +500,7 @@
           this.renderCanvas();
           this.renderAllZoneCanvases();
           this.setupCanvasEvents();
+          this.setupZoneCanvasEvents();
         });
         this.$watch('showPreviewModal', (v) => {
           if (v) this.$nextTick(() => this.renderPreviewCanvases());
@@ -1093,7 +1102,14 @@
       },
 
       // ===== ZONE SWITCHING =====
-      switchZone(id) { this.currentZone = id; this.selectedLayerId = null; this.renderCanvas(); this.renderAllZoneCanvases(); this.saveToStorage(); },
+      switchZone(id) {
+        const changed = this.currentZone !== id;
+        this.currentZone = id;
+        if (changed) this.selectedLayerId = null;
+        this.renderCanvas();
+        this.renderAllZoneCanvases();
+        this.saveToStorage();
+      },
       switchMugType(type) {
         this.selectedMugType = type;
         if (type === 'fullwrap') this.currentZone = 'fullwrap';
@@ -1190,7 +1206,257 @@
           const ctx = pc.getContext('2d');
           const W = pc.width, H = pc.height;
           ctx.clearRect(0, 0, W, H);
+
+          // Calculate and cache print area
+          const s = W / 320;
+          const mugW = Math.round(160 * s), mugH = Math.round(210 * s);
+          const cxMug = W / 2;
+          const mugTop = Math.round(55 * s);
+          const tl = { x: cxMug - mugW/2, y: mugTop };
+          const tr = { x: cxMug + mugW/2, y: mugTop };
+          const printArea = { x: tl.x + 2, y: tl.y + 4, w: tr.x - tl.x - 4, h: mugH - 8 };
+          this.zonePrintAreas[cfg.zoneId] = printArea;
+
           this._drawPreviewMug(ctx, W, H, cfg.zoneId, cfg.handleSide);
+
+          // Draw selection UI on active zone's selected layer
+          if (cfg.zoneId === this.currentZone && this.selectedLayerId) {
+            const layer = this.getLayerById(this.selectedLayerId);
+            if (layer && layer._zoneBounds) {
+              this._drawZoneSelectionUI(ctx, layer);
+            }
+          }
+        });
+      },
+
+      // ===== SELECTION UI (drag handles, resize corners, rotation) =====
+      _drawZoneSelectionUI(ctx, layer) {
+        const b = layer._zoneBounds;
+        if (!b) return;
+        const pad = 6;
+        const x = b.x - pad, y = b.y - pad, w = b.w + pad*2, h = b.h + pad*2;
+
+        ctx.save();
+        // Dashed selection border
+        ctx.strokeStyle = '#308ce8';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 3]);
+        ctx.strokeRect(x, y, w, h);
+        ctx.setLineDash([]);
+
+        // Corner resize handles
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#308ce8';
+        ctx.lineWidth = 2;
+        const hs = 8; // handle size
+        const corners = [
+          { id: 'tl', cx: x, cy: y },
+          { id: 'tr', cx: x + w, cy: y },
+          { id: 'bl', cx: x, cy: y + h },
+          { id: 'br', cx: x + w, cy: y + h },
+        ];
+        corners.forEach(c => {
+          ctx.beginPath();
+          ctx.arc(c.cx, c.cy, hs/2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        });
+
+        // Rotation handle (circle above top-center)
+        const rotX = x + w/2, rotY = y - 25;
+        // Line from top to rotation handle
+        ctx.beginPath();
+        ctx.moveTo(x + w/2, y);
+        ctx.lineTo(rotX, rotY);
+        ctx.strokeStyle = '#308ce8';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+        // Rotation circle
+        ctx.beginPath();
+        ctx.arc(rotX, rotY, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#308ce8';
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('↻', rotX, rotY);
+
+        ctx.restore();
+
+        // Store handle positions for hit testing
+        layer._handles = { corners, rotX, rotY, hs, selRect: { x, y, w, h } };
+      },
+
+      // ===== ZONE CANVAS EVENTS (drag, resize, rotate on main_* canvases) =====
+      setupZoneCanvasEvents() {
+        const zoneConfigs = [
+          { canvasId: 'main_front', zoneId: 'front' },
+          { canvasId: 'main_rear',  zoneId: 'rear' },
+          { canvasId: 'main_back',  zoneId: 'back' },
+        ];
+        zoneConfigs.forEach(cfg => {
+          const canvas = document.getElementById(cfg.canvasId);
+          if (!canvas) return;
+
+          const getPos = (e) => {
+            const rect = canvas.getBoundingClientRect();
+            return {
+              x: (e.clientX - rect.left) * (canvas.width / rect.width),
+              y: (e.clientY - rect.top) * (canvas.height / rect.height)
+            };
+          };
+
+          const hitTestZoneLayers = (pos) => {
+            const zoneLayers = [...(this.layers[cfg.zoneId] || [])].reverse();
+            for (const layer of zoneLayers) {
+              if (!layer.visible || !layer._zoneBounds) continue;
+              const b = layer._zoneBounds;
+              if (pos.x >= b.x - 12 && pos.x <= b.x + b.w + 12 && pos.y >= b.y - 12 && pos.y <= b.y + b.h + 12) return layer;
+            }
+            return null;
+          };
+
+          const hitTestHandle = (pos) => {
+            if (!this.selectedLayerId) return null;
+            const layer = this.getLayerById(this.selectedLayerId);
+            if (!layer || !layer._handles) return null;
+            const h = layer._handles;
+
+            // Check rotation handle
+            const rdx = pos.x - h.rotX, rdy = pos.y - h.rotY;
+            if (Math.sqrt(rdx*rdx + rdy*rdy) < 14) return 'rotate';
+
+            // Check corner handles
+            for (const c of h.corners) {
+              const dx = pos.x - c.cx, dy = pos.y - c.cy;
+              if (Math.sqrt(dx*dx + dy*dy) < 10) return c.id;
+            }
+            return null;
+          };
+
+          const handler = (type, e) => {
+            const pos = getPos(e);
+            if (type === 'down') {
+              // Switch zone WITHOUT clearing selection if already on this zone
+              if (this.currentZone !== cfg.zoneId) {
+                this.currentZone = cfg.zoneId;
+                this.selectedLayerId = null;
+                this.renderCanvas();
+                this.renderAllZoneCanvases();
+              }
+
+              // Check resize/rotate handles FIRST (before layer hit test)
+              const handle = hitTestHandle(pos);
+              if (handle === 'rotate') {
+                this.isRotatingLayer = true;
+                const layer = this.getLayerById(this.selectedLayerId);
+                if (layer && layer._zoneBounds) {
+                  this._rotateStartAngle = Math.atan2(pos.y - layer._zoneBounds.cy, pos.x - layer._zoneBounds.cx);
+                  this._rotateStartRotation = layer.rotation || 0;
+                }
+                this.dragStart = pos;
+                return;
+              } else if (handle) {
+                this.isResizingLayer = true;
+                this.resizeHandle = handle;
+                const layer = this.getLayerById(this.selectedLayerId);
+                if (layer) {
+                  this._resizeStartScale = layer.scalePercent || 100;
+                  this._resizeStartPos = pos;
+                }
+                this.dragStart = pos;
+                return;
+              }
+
+              // Then hit-test layers for drag/select
+              const hit = hitTestZoneLayers(pos);
+              if (hit) {
+                this.selectedLayerId = hit.id;
+                this.isDraggingLayer = true;
+                this.dragStart = pos;
+              } else {
+                this.selectedLayerId = null;
+              }
+              this.renderAllZoneCanvases();
+
+            } else if (type === 'move') {
+              const layer = this.selectedLayerId ? this.getLayerById(this.selectedLayerId) : null;
+              if (!layer) return;
+              const pa = this.zonePrintAreas[cfg.zoneId];
+              if (!pa) return;
+
+              if (this.isRotatingLayer && layer._zoneBounds) {
+                const b = layer._zoneBounds;
+                const currentAngle = Math.atan2(pos.y - b.cy, pos.x - b.cx);
+                const deltaAngle = (currentAngle - (this._rotateStartAngle || 0)) * 180 / Math.PI;
+                layer.rotation = Math.round(this._rotateStartRotation + deltaAngle);
+                this.renderCanvas();
+                this.renderAllZoneCanvases();
+
+              } else if (this.isResizingLayer) {
+                const dx = pos.x - this.dragStart.x;
+                const dy = pos.y - this.dragStart.y;
+                // Use diagonal distance for uniform scaling
+                let dist;
+                if (this.resizeHandle === 'br') dist = dx + dy;
+                else if (this.resizeHandle === 'tl') dist = -(dx + dy);
+                else if (this.resizeHandle === 'tr') dist = dx - dy;
+                else dist = -dx + dy; // bl
+                const scaleDelta = dist * 0.5;
+                const newScale = Math.max(10, Math.min(300, (layer.scalePercent || 100) + scaleDelta));
+                layer.scalePercent = newScale;
+                if (layer.type === 'text') {
+                  // For text, also adjust fontSize
+                  const baseFontSize = 32;
+                  layer.fontSize = Math.max(8, Math.min(120, Math.round(baseFontSize * newScale / 100)));
+                }
+                this.dragStart = pos;
+                this.renderCanvas();
+                this.renderAllZoneCanvases();
+
+              } else if (this.isDraggingLayer) {
+                const dx = pos.x - this.dragStart.x;
+                const dy = pos.y - this.dragStart.y;
+                layer.posX = Math.max(0, Math.min(1, (layer.posX || 0.5) + dx / pa.w));
+                layer.posY = Math.max(0, Math.min(1, (layer.posY || 0.5) + dy / pa.h));
+                this.dragStart = pos;
+                this.renderCanvas();
+                this.renderAllZoneCanvases();
+              }
+
+            } else if (type === 'up') {
+              if (this.isDraggingLayer || this.isResizingLayer || this.isRotatingLayer) {
+                this.saveToStorage();
+              }
+              this.isDraggingLayer = false;
+              this.isResizingLayer = false;
+              this.isRotatingLayer = false;
+              this.resizeHandle = null;
+            }
+          };
+
+          canvas.addEventListener('mousemove', (e) => {
+            handler('move', e);
+            // Update cursor
+            if (!this.isDraggingLayer && !this.isResizingLayer && !this.isRotatingLayer) {
+              const pos = getPos(e);
+              const handle = hitTestHandle(pos);
+              if (handle === 'rotate') canvas.style.cursor = 'grab';
+              else if (handle === 'tl' || handle === 'br') canvas.style.cursor = 'nwse-resize';
+              else if (handle === 'tr' || handle === 'bl') canvas.style.cursor = 'nesw-resize';
+              else if (hitTestZoneLayers(pos)) canvas.style.cursor = 'move';
+              else canvas.style.cursor = 'default';
+            }
+          });
+
+          canvas.addEventListener('mousedown', (e) => { e.stopPropagation(); handler('down', e); });
+          canvas.addEventListener('mouseup', (e) => { e.stopPropagation(); handler('up', e); });
+          canvas.addEventListener('click', (e) => { e.stopPropagation(); });
+          canvas.addEventListener('mouseleave', (e) => handler('up', e));
+          canvas.addEventListener('touchstart', (e) => { e.preventDefault(); e.stopPropagation(); handler('down', e.touches[0]); }, { passive: false });
+          canvas.addEventListener('touchmove', (e) => { e.preventDefault(); e.stopPropagation(); handler('move', e.touches[0]); }, { passive: false });
+          canvas.addEventListener('touchend', (e) => { e.stopPropagation(); handler('up', e); });
         });
       },
 
@@ -1410,6 +1676,7 @@
             ctx.rotate((layer.rotation || 0) * Math.PI / 180);
             ctx.scale(layer.flipH ? -1 : 1, layer.flipV ? -1 : 1);
             ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+            layer._zoneBounds = { x: cx - dw/2, y: cy - dh/2, w: dw, h: dh, cx, cy, dw, dh };
           } else if (layer.type === 'text') {
             const fs = Math.round((layer.fontSize || 32) * (pa.h / 400));
             ctx.font = `${layer.italic ? 'italic ' : ''}${layer.bold ? 'bold' : 'normal'} ${fs}px ${layer.fontFamily || 'Inter'}`;
@@ -1426,6 +1693,10 @@
             }
             ctx.fillStyle = layer.color || '#ffffff';
             ctx.fillText(layer.content, 0, 0);
+            const metrics = ctx.measureText(layer.content);
+            const tw = metrics.width;
+            const th = fs * 1.2;
+            layer._zoneBounds = { x: cx - tw/2, y: cy - th/2, w: tw, h: th, cx, cy, dw: tw, dh: th };
           }
           ctx.restore();
         });
