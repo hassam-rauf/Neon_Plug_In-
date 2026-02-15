@@ -1213,9 +1213,9 @@
       renderAllZoneCanvases() {
         if (this.selectedMugType === 'fullwrap') return;
         const configs = [
-          { canvasId: 'main_front', zoneId: 'front', handleSide: 'right', neighbors: { left: 'back', right: 'rear' } },
+          { canvasId: 'main_front', zoneId: 'front', handleSide: 'right', neighbors: null },
           { canvasId: 'main_rear',  zoneId: 'rear',  handleSide: 'none',  neighbors: { left: 'front', right: 'back' } },
-          { canvasId: 'main_back',  zoneId: 'back',  handleSide: 'left',  neighbors: { left: 'rear', right: 'front' } },
+          { canvasId: 'main_back',  zoneId: 'back',  handleSide: 'left',  neighbors: null },
         ];
         configs.forEach(cfg => {
           const pc = document.getElementById(cfg.canvasId);
