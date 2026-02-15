@@ -801,7 +801,7 @@
 
       renderTextLayer(ctx, pa, layer) {
         const fontSize = layer.fontSize || 32;
-        const fontFamily = layer.fontFamily || 'Inter';
+        const fontFamily = layer.fontFamily || 'Helvetica';
         const bold = layer.bold ? 'bold' : 'normal';
         const italic = layer.italic ? 'italic ' : '';
         const rotation = (layer.rotation || 0) * Math.PI / 180;
@@ -1189,7 +1189,7 @@
                 tctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
               } else if (l.type === 'text') {
                 const fs = Math.max(6, Math.round((l.fontSize || 32) * (pa.h / 320)));
-                tctx.font = `${l.italic ? 'italic ' : ''}${l.bold ? 'bold' : 'normal'} ${fs}px ${l.fontFamily || 'Inter'}`;
+                tctx.font = `${l.italic ? 'italic ' : ''}${l.bold ? 'bold' : 'normal'} ${fs}px ${l.fontFamily || 'Helvetica'}`;
                 tctx.textAlign = 'center'; tctx.textBaseline = 'middle';
                 const cx = pa.x + (l.posX || 0.5) * pa.w;
                 const cy = pa.y + (l.posY || 0.5) * pa.h;
@@ -1771,7 +1771,7 @@
             }
           } else if (layer.type === 'text') {
             const fs = Math.round((layer.fontSize || 32) * (pa.h / 400));
-            ctx.font = `${layer.italic ? 'italic ' : ''}${layer.bold ? 'bold' : 'normal'} ${fs}px ${layer.fontFamily || 'Inter'}`;
+            ctx.font = `${layer.italic ? 'italic ' : ''}${layer.bold ? 'bold' : 'normal'} ${fs}px ${layer.fontFamily || 'Helvetica'}`;
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             const metrics = ctx.measureText(layer.content);
             const tw = Math.max(metrics.width, 40); // minimum 40px width for easy clicking
@@ -1869,7 +1869,7 @@
           } else if (layer.type === 'text') {
             const sf = dpi / 96;
             const fs = Math.round((layer.fontSize || 32) * sf);
-            ectx.font = `${layer.italic ? 'italic ' : ''}${layer.bold ? 'bold' : 'normal'} ${fs}px ${layer.fontFamily || 'Inter'}`;
+            ectx.font = `${layer.italic ? 'italic ' : ''}${layer.bold ? 'bold' : 'normal'} ${fs}px ${layer.fontFamily || 'Helvetica'}`;
             ectx.textAlign = 'center'; ectx.textBaseline = 'middle';
             const cx = offsetX + (layer.posX || 0.5) * zw;
             const cy = (layer.posY || 0.5) * fullH;
